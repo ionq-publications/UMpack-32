@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+PROG=./FixOrTest1.exe
+
+/bin/rm -f seeds.out seeds.in new.out newout.notime expectedout.notime diffs.notime
+
+echo "------------  Running test 1a..." > new.out
+echo "Running test 1a..."
+$PROG -f ../RowIroning/TESTS/C432a.aux -verb 2_2_2 >> new.out 2>&1
+echo "------------  Running test 1b..." >> new.out
+echo "Running test 1b..."
+$PROG -f ../RowIroning/TESTS/primary1.nf.WS10.aux -verb 2_2_2 >> new.out 2>&1
+
+egrep -v "(Created|sec|User|Platform|Memory)" new.out > newout.notime
+egrep -v "(Created|sec|User|Platform|Memory)" expected.out > expectedout.notime
+$DIFF newout.notime expectedout.notime > diffs.notime
+
+echo " "
+echo "Differences from precomputed results"
+echo "  lines:  words:  bytes:    error log:"
+$WC diffs.notime
+
+rm -f seeds.out seeds.in expectedout.notime
+test ! -s diffs.notime || exit 1

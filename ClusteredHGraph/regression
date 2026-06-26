@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+PROG=./ClusteredHGraphTest
+
+rm -rf seeds.* >/dev/null 2>&1
+
+cp TESTS/seeds.in seeds.in
+
+echo "------------  Running test 0a..." >new.out
+echo -n Running test 0a...
+"$PROG"0.exe -f TESTS/primary1+.aux -verb 6_6_6 >>new.out 2>&1
+echo Ok
+
+echo "------------  Running test 0b-opt1..." >>new.out
+echo -n Running test 0b-opt1...
+"$PROG"0.exe -f TESTS/ibm01+.aux -verb 6_6_6 -clSizeOfTop 75 >>new.out 2>&1
+echo Ok
+
+echo "------------  Running test 0b-opt2..." >>new.out
+echo -n Running test 0b-opt2...
+"$PROG"0.exe -f TESTS/ibm01+.aux -verb 6_6_6 -clSizeOfTop 75 -clRemoveDup 2 >>new.out 2>&1
+echo Ok
+
+echo "------------  Running test 0b-opt3..." >>new.out
+echo -n Running test 0b-opt3...
+"$PROG"0.exe -f TESTS/ibm01+.aux -verb 6_6_6 -clSizeOfTop 75 -clRemoveDup 3 >>new.out 2>&1
+echo Ok
+
+egrep -v "(Created|arning|seeds.in|sec|User|Platform|Memory)" new.out >newout.notime
+egrep -v "(Created|arning|seeds.in|sec|User|Platform|Memory)" expected.out >expectedout.notime
+"$DIFF" newout.notime expectedout.notime >diffs.notime
+
+echo " "
+echo Differences from precomputed results
+"$WC" diffs.notime
+
+rm -f seeds.* >/dev/null 2>&1

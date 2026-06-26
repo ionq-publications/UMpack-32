@@ -1,0 +1,59 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+PROG=./GeomsTest
+
+/bin/rm -f seeds.in seeds.out
+echo 0 >seeds.in
+echo 1 >>seeds.in
+
+printf '%s' "Running test0  ..."
+printf '%s' "Running test1  ..." >new.out
+echo "-----------------------" >new.out
+"${PROG}0.exe" >>new.out 2>&1
+echo Ok
+printf '%s' "Running test1  ..."
+printf '%s' "Running test1  ..." >>new.out
+echo "-----------------------" >>new.out
+"${PROG}1.exe" >>new.out 2>&1
+echo Ok
+printf '%s' "Running test2  ..."
+printf '%s' "Running test2  ..." >>new.out
+echo "-----------------------" >>new.out
+"${PROG}2.exe" >>new.out 2>&1
+echo Ok
+
+egrep -v "(Created|arning|sec|User|Platform|Memory)" new.out | sed '${/^$/d;}' >new.out.notime
+egrep -v "(Created|arning|sec|User|Platform|Memory)" expected.out | sed '${/^$/d;}' >expectedout.notime
+
+"$DIFF" new.out.notime expectedout.notime >diffs.notime
+
+echo " "
+echo Differences from precomputed results
+echo "  lines:  words:  bytes:    error log:"
+"$WC" diffs.notime
+
+/bin/rm -f seeds.out seeds.in expectedout.notime
+
+test ! -s diffs.notime || exit 1
+echo Running semantic checks...
+"${PROG}3.exe" || exit 1

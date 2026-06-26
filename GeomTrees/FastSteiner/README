@@ -1,0 +1,7 @@
+This is the batched greedy code (and the instance generator) used 
+in the submission to ASPDAC'03, last modified on 07/25/02.  
+It is experimental code, not an official release, so please do 
+not distribute it.  To get a brief list of parameters type 
+"steiner -help" or "gen -help" after successfuly making 
+the two executables.  For bug reports or questions please contact 
+me at mandoiu@cs.ucsd.edu.

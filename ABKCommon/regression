@@ -1,0 +1,184 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+set -eu
+
+PROG=./ABKCommonTest
+TMPDIR_ROOT=${TMPDIR:-/tmp}
+WORKDIR=$(mktemp -d "$TMPDIR_ROOT/abkcommon-regression.XXXXXX")
+trap 'rm -rf "$WORKDIR"; rm -f seeds.in seeds.out newout.notime expectedout.notime' EXIT HUP INT TERM
+ulimit -c 0 2>/dev/null || true
+
+fail() {
+	echo "FAILED: $*" >&2
+	exit 1
+}
+
+run_ok() {
+	name=$1
+	shift
+	output="$WORKDIR/$name.out"
+	echo "Running $name ..."
+	if ! "$@" >"$output" 2>&1; then
+		cat "$output" >&2
+		fail "$name exited unsuccessfully"
+	fi
+	if grep -Eiq '(^|[^A-Za-z])(ERROR|FAIL)([^A-Za-z]|$)' "$output"; then
+		cat "$output" >&2
+		fail "$name emitted an error diagnostic"
+	fi
+	echo Ok
+}
+
+expect_failure() {
+	name=$1
+	marker=$2
+	shift 2
+	output="$WORKDIR/$name.out"
+	echo "Running $name ..."
+	if "$@" >"$output" 2>&1; then
+		cat "$output" >&2
+		fail "$name unexpectedly succeeded"
+	fi
+	grep -Fq -- "$marker" "$output" || {
+		cat "$output" >&2
+		fail "$name did not emit expected diagnostic: $marker"
+	}
+	echo Ok
+}
+
+rm -f diffs.notime seeds.in seeds.out newout
+run_ok semantic "$PROG"22.exe "$WORKDIR"
+run_ok timer-smoke "$PROG"1.exe
+echo "Running assertion-death ..."
+if grep -aFq -- 'test #  3' "$PROG"6.exe; then
+	expect_failure assertion-death 'test #  3' "$PROG"6.exe
+else
+	echo "Skipped (assertion checks are compiled out in this build)"
+fi
+
+echo -n "Running test0  ..."
+"$PROG"0.exe >newout
+"$PROG"0.exe -help >>newout
+"$PROG"0.exe --help >>newout
+"$PROG"0.exe +cloak >>newout
+"$PROG"0.exe -aux filename.aux -n -sanity >>newout
+"$PROG"0.exe -aux filename.aux -sanity 0.0001 -n 25 >>newout
+echo Ok
+
+echo -n "Running test2  ..."
+echo -n "Running test2  ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"2.exe >>newout
+echo Ok
+
+echo -n "Running test3  ..."
+echo -n "Running test3  ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"3.exe >>/dev/null
+echo Ok
+
+echo -n "Running test4  ..."
+echo -n "Running test4  ..." >>newout
+echo "-----------------------" >>newout
+echo " 2 and 3" | "$PROG"4.exe >>newout
+echo Ok
+
+echo -n "Running test5  ..."
+echo -n "Running test5  ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"5.exe >>newout 2>&1
+echo Ok
+
+echo -n "Running test7  ..."
+echo -n "Running test7  ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"7.exe >>newout
+echo Ok
+
+echo -n "Running test9  ..."
+echo -n "Running test9  ..." >>newout
+echo "-----------------------" >>newout
+printf '%s\n' 0 3819098400 2 0 8 8 >seeds.in
+"$PROG"9.exe >>newout 2>&1
+echo "---------------------- seeds.out:----------" >>newout
+cat seeds.out >>newout
+echo Ok
+
+echo -n "Running test10 ..."
+echo -n "Running test10 ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"10.exe >>newout
+echo Ok
+
+echo -n "Running test11 ..."
+echo -n "Running test11 ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"11.exe >>newout
+echo Ok
+
+echo -n "Running test13 ..."
+echo -n "Running test13 ..." >>newout
+echo "-----------------------" >>newout
+"$PROG"13.exe >>newout
+echo Ok
+
+echo -n "Running test16 ..."
+echo -n "Running test16 ..." >>newout
+echo "-----------test16-----" >>newout
+printf '%s\n' 0 4040668743 >seeds.in
+"$PROG"16.exe >>newout 2>&1
+echo Ok
+
+echo -n "Running test19 ..."
+echo -n "Running test19 ..." >>newout
+echo "-----------test19-----" >>newout
+"$PROG"19.exe >>newout 2>&1
+echo Ok
+
+echo -n "Running test20a ..."
+echo -n "Running test20a ..." >>newout
+echo "-----------test20a-----" >>newout
+"$PROG"20.exe >>newout 2>&1
+cat seeds.out >>newout
+echo Ok
+
+echo -n "Running test20b ..."
+echo -n "Running test20b ..." >>newout
+echo "-----------test20b-----" >>newout
+rm -f seeds.in
+"$PROG"20.exe >>newout 2>&1
+cat seeds.out >>newout
+echo Ok
+
+echo -n "Running test21 ..."
+echo -n "Running test21 ..." >>newout
+echo "-----------test21-----" >>newout
+"$PROG"21.exe >>newout 2>&1
+echo Ok
+
+grep -Evi '(Created|sec|in seed.cxx)' newout >newout.notime
+grep -Evi '(Created|sec|in seed.cxx)' expectedout >expectedout.notime
+if ! diff -u expectedout.notime newout.notime >diffs.notime; then
+	cat diffs.notime >&2
+	fail "legacy output differs from expectedout"
+fi
+
+echo "All ABKCommon regression tests passed"

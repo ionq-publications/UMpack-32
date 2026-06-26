@@ -1,0 +1,1126 @@
+#!/usr/bin/perl
+
+require 5.002;
+$| = 1;
+
+chomp( $system = `uname 2> /dev/null` );
+
+chomp( $gpp = `which g++` );
+$gpp       = "" if $gpp =~ /not found/i;
+$gpp       = "" if $gpp =~ /^ *no/i;
+$GPPstatus = "\n     (The g++ command does not work on your system)";
+if ( $gpp =~ /\S/ ) {
+    $gppver = `g++ --version 2> /dev/null`;
+    $gppver = $1 if $gppver =~ /\s(\S+\.\S+)\s/;
+    $gppver =~ s/\)$//;
+    chomp($gppver);
+    $GPPstatus = "have g++ $gppver";
+    $gppmaj    = 0;
+    $gppmaj    = $1 if $gppver =~ /(\d+)\S*/;
+    $gppmin    = 0;
+    $gppmin    = $1 if $gppver =~ /\d+\.(\d+)\S*/;
+    $gpprev    = 0;
+    $gpprev    = $1 if $gppver =~ /\d+\.\d+\.(\d+)/;
+}
+
+print <<END;
+
+ ************ UMpack configuration for Linux ******************
+ ** Contact: igor.markov1\@gmail.com
+ ** If you have not read README.md yet, please quit this program(Ctrl-C)**
+ ** If something goes wrong, send install.log with your bug report       **
+ ** (assuming you typed "script install.log" before "perl config")       **
+ **************************************************************************
+
+ This program will adapt Makefiles to your $system system and offer testing. 
+END
+
+die " . must be in your \$PATH\n" unless $ENV{PATH} =~ /\./;
+
+if ($gpp) {
+    print <<END;
+ You $GPPstatus. In individual packages, use make-gnu and makeOpt-gnu
+END
+}
+else { print "\n NOTE: The g++ command does not work on your system\n\n"; }
+
+$var = `df -k .`;
+$var =~ /\s+(\d+)\s+(\S+)\%/;
+
+# $space=$1/1024;
+# printf "\nYou have %.2f MB free disk space",$space;
+
+$line = `make -v 2> /dev/null`;
+if ( $line =~ /GNU/i ) {
+
+    # print "\nYou are using GNU make.\n\n";
+    $gmake = "";
+}
+else {
+    print "\nYour make utility does not appear to be GNU make.\n";
+    chomp( $gmake = `which gmake` );
+    $gmake = "" if $gmake =~ /not found/i;
+    $gmake = "" if $gmake =~ /^ *no/i;
+    if ($gmake) {
+        print "The gmake ($gmake) utility is available on your system.\n";
+        print "This script will use gmake instead of your non-GNU make.\n\n";
+    }
+    else {
+        print "Cannot find a version of gmake on your system.\n";
+        die "This script requires a version of GNU make for compilation.";
+    }
+}
+
+$NeedSTL = 0;
+
+# Forward declarations avoid compile-time prototype warnings when these
+# routines are called before their definitions later in the file.
+sub buildBinaries;
+sub testLibs;
+$GCCwSunLinker = 0;
+$Have64bits    = "";
+
+print("\n");
+
+if ( $system eq "Linux" ) {
+    $onLinux = $system;
+    $MAKE    = "./make-gnu";
+
+# print "Do you plan to use g++2.95.2 or higher ? [y/N] ";
+# $_=<>;
+# die
+# "You plan to use an unsupported compiler, this setup may be inappropriate\n" unless /y/i;
+    if ( -e "/proc/cpuinfo" ) {
+        chomp( $SFtemp = `egrep Itanium /proc/cpuinfo | wc -l` );
+        $SFtemp =~ s/ +//g;
+        $Have64bits = " 64-bit Itanium" if $SFtemp > 0;
+        chomp( $SFtemp = `egrep Opteron /proc/cpuinfo | wc -l` );
+        $SFtemp =~ s/ +//g;
+        $Have64bits = " 64-bit Opteron" if $SFtemp > 0;
+        chomp( $unamea = `uname -a` );
+
+        #        $march="pentium4" if $namea =~ m/pentium4/;
+        $Have64bits = " 64-bit"
+          if ( ( $Have64bits eq "" ) && $unamea =~ m/x86_64/ );
+
+        chomp( $Nproc = `egrep ^processor /proc/cpuinfo | wc -l` );
+        $Nproc =~ s/ +//g;
+        if ( $Nproc > 1 && $Nproc < 65 ) {
+            print " The OS reports $Nproc$Have64bits processors.\n";
+            print
+" How many parallel processes may I use during compilation ? (default $Nproc): ";
+            chomp( $rNproc = <> );
+            $rNproc =~ s/ +//g;
+            if ( $rNproc =~ /y/i || $rNproc eq "" ) {
+                $MAKE = "$MAKE -j  $Nproc";
+            }
+            elsif ( $rNproc == 1 ) { }
+            elsif ( $rNproc > 1 && $rNproc < 65 ) {
+                $MAKE = "$MAKE -j $rNproc";
+            }
+            else { die "The number of processes must be between 1 and 64\n"; }
+        }
+    }
+}
+else {
+    $MAKE = "./make-gnu";
+    print "WARNING: This system ($system) is not supported by config\n";
+    print "Do you plan to use g++2.95 or higher ? [y/N] ";
+    $_       = <>;
+    $NeedSTL = 0 if (/y/i);
+}
+
+$use_m32 = 0;
+$use_m64 = 0;
+
+chomp( $PWD = `pwd` );
+print "\nUpdating files : \n";
+
+foreach $file ( glob "{*/*makeOpt-gnu,*/*/*makeOpt-gnu}" ) {
+    print $file, "\n";
+    open( MAKESCRI, "$file" );
+    open( TMP,      ">perltmp.tmp" );
+    while (<MAKESCRI>) {
+        s/LIBBASE\S+ //g;
+        s/\s*-m64//g;
+        s/\s*-m32//g;
+        if ($use_m64) {
+            s/-O3\b/-O3 -m64/g;
+            s/-O2\b/-O2 -m64/g;
+            s/-shared\b/-shared -m64/g;
+            s/LDFINAL="g../LDFINAL="g++ -m64/g;
+            s/LDCFINAL="gcc/LDCFINAL="gcc -m64/g;
+        }
+        if ($use_m32) {
+            s/-O3\b/-O3 -m32/g;
+            s/-O2\b/-O2 -m32/g;
+            s/-shared\b/-shared -m32/g;
+            s/LDFINAL="g../LDFINAL="g++ -m32/g;
+            s/LDCFINAL="gcc/LDCFINAL="gcc -m32/g;
+        }
+        print TMP;
+    }
+    close(MAKESCRI);
+    close(TMP);
+    system "/bin/mv perltmp.tmp $file";
+    system "chmod ug+x $file";
+}
+
+foreach $file ( glob "Cadence*/template.mk" ) {
+    print $file, "\n";
+    open( MAKESCRI, "$file" );
+    open( TMP,      ">perltmp.tmp" );
+    while (<MAKESCRI>) {
+        s/\s*-m64//g;
+        s/\s*-m32//g;
+        print TMP;
+    }
+    close(MAKESCRI);
+    close(TMP);
+    system "/bin/mv perltmp.tmp $file";
+    system "chmod ug+x $file";
+}
+
+if ($use_m64) {
+    foreach $file ( glob "{*/*make-gnu,*/*/*make-gnu}" ) {
+        print $file, "\n";
+        open( MAKESCRI, "$file" );
+        open( TMP,      ">perltmp.tmp" );
+        while (<MAKESCRI>) {
+            s/\s*-m64//g;
+            s/\s*-m32//g;
+            s/-g\b/-g -m64/g;
+            s/-shared\b/-shared -m64/g;
+            s/LDFINAL="g../LDFINAL="g++ -m64/g;
+            s/LDCFINAL="gcc/LDCFINAL="gcc -m64/g;
+            print TMP;
+        }
+        close(MAKESCRI);
+        close(TMP);
+        system "/bin/mv perltmp.tmp $file";
+        system "chmod ug+x $file";
+    }
+
+    foreach $file ( glob "Cadence*/template.mk" ) {
+        print $file, "\n";
+        open( MAKESCRI, "$file" );
+        open( TMP,      ">perltmp.tmp" );
+        while (<MAKESCRI>) {
+            s/\s*-m64//g;
+            s/\s*-m32//g;
+            s/-O2\b/-O2 -m64/g;
+            print TMP;
+        }
+        close(MAKESCRI);
+        close(TMP);
+        system "/bin/mv perltmp.tmp $file";
+        system "chmod ug+x $file";
+    }
+}
+
+if ($use_m32) {
+    foreach $file ( glob "{*/*make-gnu,*/*/*make-gnu}" ) {
+        print $file, "\n";
+        open( MAKESCRI, "$file" );
+        open( TMP,      ">perltmp.tmp" );
+        while (<MAKESCRI>) {
+            s/\s*-m32//g;
+            s/\s*-m64//g;
+            s/-g\b/-g -m32/g;
+            s/-shared\b/-shared -m32/g;
+            s/LDFINAL="g../LDFINAL="g++ -m32/g;
+            s/LDCFINAL="gcc/LDCFINAL="gcc -m32/g;
+            print TMP;
+        }
+        close(MAKESCRI);
+        close(TMP);
+        system "/bin/mv perltmp.tmp $file";
+        system "chmod ug+x $file";
+    }
+
+    foreach $file ( glob "Cadence*/template.mk" ) {
+        print $file, "\n";
+        open( MAKESCRI, "$file" );
+        open( TMP,      ">perltmp.tmp" );
+        while (<MAKESCRI>) {
+            s/\s*-m32//g;
+            s/\s*-m64//g;
+            s/-O2\b/-O2 -m32/;
+            print TMP;
+        }
+        close(MAKESCRI);
+        close(TMP);
+        system "/bin/mv perltmp.tmp $file";
+        system "chmod ug+x $file";
+    }
+}
+
+if ($GCCwSunLinker) {
+    foreach $file ( glob "{*/*make*-gnu,*/*/*make*-gnu}" ) {
+        print $file, "\n";
+        open( MAKESCRI, "$file" );
+        open( TMP,      ">perltmp.tmp" );
+        while (<MAKESCRI>) {
+            s/-rpath/-R/g;
+            print TMP;
+        }
+        close(MAKESCRI);
+        close(TMP);
+        system "/bin/mv perltmp.tmp $file";
+        system "chmod ug+x $file";
+    }
+}
+
+foreach $file ( glob "*/Makefile */*/Makefile" ) {
+    print $file, "\n";
+    open( MAKEFILE, "$file" );
+    open( TMP,      ">perltmp.tmp" );
+    while (<MAKEFILE>) {
+        s#\/static##;
+        s/^\s*IMPORT\s+=.*/IMPORT   = NOT_USED/;
+        s/^\s*STL\s+=.*/STL      = -I$STL/ if $STL;
+        s/HAVE_Q_PARSER/ZZYZX/ig;
+        s/-ly// if $onLinux;
+
+        print TMP;
+    }
+    close(MAKEFILE);
+    close(TMP);
+    system "/bin/mv perltmp.tmp $file";
+}
+
+# The per-package make-gnu / makeOpt-gnu wrappers are now thin delegators to the
+# shared gnu-make-wrapper.sh in the project root, which is where the real
+# compiler/linker command line and its flags live. Build-tweak substitutions
+# below must therefore also be applied to that shared script, or they silently
+# do nothing (the delegators no longer contain "make", "-O3", "-ffloat-store",
+# etc).
+if ($gmake) {
+    system "perl -p -i -e \'s/^make/gmake/g\' */make*gnu */*/make*gnu";
+    system "perl -p -i -e \'s/exec make\\b/exec gmake/g\' gnu-make-wrapper.sh";
+}
+else {
+    system "perl -p -i -e \'s/gmake/make/g\' */make*gnu */*/make*gnu";
+    system "perl -p -i -e \'s/exec gmake\\b/exec make/g\' gnu-make-wrapper.sh";
+}
+
+system "perl -p -i -e \'s/\\s*-fomit-frame-pointer//g\' gnu-make-wrapper.sh */*make* */*/*make*";
+
+sub ensureLibDir {
+    if ( -e "$PWD/lib" ) {
+        if ( !-d "$PWD/lib" ) {
+            die "\n$PWD/lib exists but is not a directory\n";
+        }
+        if ( libNeedsRefresh() ) {
+            print
+"\n The directory $PWD/lib contains stale or missing library links.\n";
+            print
+" Would you like to remove it and recreate it from scratch ? [Y/n] ";
+            $_ = <>;
+            if ( !/n/i ) {
+                system( "rm", "-rf", "$PWD/lib" ) == 0
+                  || die "Can't remove $PWD/lib";
+            }
+        }
+    }
+
+    if ( !-e "$PWD/lib" ) {
+        print "\nCreating  directory  $PWD/lib ... ";
+        system( "mkdir", "$PWD/lib" ) == 0 || die "Can't create $PWD/lib";
+    }
+}
+
+sub linkLib {
+    my ( $src, $dst ) = @_;
+    if ( -l $dst ) {
+        my $target = readlink($dst);
+        return if defined $target && $target eq $src;
+    }
+    unlink $dst if ( -e $dst || -l $dst );
+    symlink $src, $dst || die "Can't create symlink $dst -> $src";
+}
+
+my @libLinks = (
+    [ "$PWD/ABKCommon/libABKCommon.a",             "lib/libABKCommon.a" ],
+    [ "$PWD/ABKCommon/libABKCommon.so",            "lib/libABKCommon.so" ],
+    [ "$PWD/AnalytPl/libAnalytPl.a",               "lib/libAnalytPl.a" ],
+    [ "$PWD/AnalytPl/libAnalytPl.so",              "lib/libAnalytPl.so" ],
+    [ "$PWD/Capo/libCapo.a",                       "lib/libCapo.a" ],
+    [ "$PWD/Capo/libCapo.so",                      "lib/libCapo.so" ],
+    [ "$PWD/ClusteredHGraph/libClusteredHGraph.a", "lib/libClusteredHGraph.a" ],
+    [
+        "$PWD/ClusteredHGraph/libClusteredHGraph.so",
+        "lib/libClusteredHGraph.so"
+    ],
+    [ "$PWD/Combi/libCombi.a",                    "lib/libCombi.a" ],
+    [ "$PWD/Combi/libCombi.so",                   "lib/libCombi.so" ],
+    [ "$PWD/CongestionMaps/libCongestionMaps.a",  "lib/libCongestionMaps.a" ],
+    [ "$PWD/CongestionMaps/libCongestionMaps.so", "lib/libCongestionMaps.so" ],
+    [ "$PWD/Constraints/libConstraints.a",        "lib/libConstraints.a" ],
+    [ "$PWD/Constraints/libConstraints.so",       "lib/libConstraints.so" ],
+    [ "$PWD/Ctainers/libCtainers.a",              "lib/libCtainers.a" ],
+    [ "$PWD/Ctainers/libCtainers.so",             "lib/libCtainers.so" ],
+    [ "$PWD/FMPart/libFMPart.a",                  "lib/libFMPart.a" ],
+    [ "$PWD/FMPart/libFMPart.so",                 "lib/libFMPart.so" ],
+    [ "$PWD/FilledHier/libFilledHier.a",          "lib/libFilledHier.a" ],
+    [ "$PWD/FilledHier/libFilledHier.so",         "lib/libFilledHier.so" ],
+    [ "$PWD/FixOr/libFixOr.a",                    "lib/libFixOr.a" ],
+    [ "$PWD/FixOr/libFixOr.so",                   "lib/libFixOr.so" ],
+    [ "$PWD/GenHier/libGenHier.a",                "lib/libGenHier.a" ],
+    [ "$PWD/GenHier/libGenHier.so",               "lib/libGenHier.so" ],
+    [ "$PWD/GeomTrees/libGeomTrees.a",            "lib/libGeomTrees.a" ],
+    [ "$PWD/GeomTrees/libGeomTrees.so",           "lib/libGeomTrees.so" ],
+    [ "$PWD/Geoms/libGeoms.a",                    "lib/libGeoms.a" ],
+    [ "$PWD/Geoms/libGeoms.so",                   "lib/libGeoms.so" ],
+    [ "$PWD/HGraph/libHGraph.a",                  "lib/libHGraph.a" ],
+    [ "$PWD/HGraph/libHGraph.so",                 "lib/libHGraph.so" ],
+    [ "$PWD/HGraphWDims/libHGraphWDims.a",        "lib/libHGraphWDims.a" ],
+    [ "$PWD/HGraphWDims/libHGraphWDims.so",       "lib/libHGraphWDims.so" ],
+    [ "$PWD/MLPart/libMLPart.a",                  "lib/libMLPart.a" ],
+    [ "$PWD/MLPart/libMLPart.so",                 "lib/libMLPart.so" ],
+    [
+        "$PWD/ParquetDBFromRBP/libParquetDBFromRBP.a",
+        "lib/libParquetDBFromRBP.a"
+    ],
+    [
+        "$PWD/ParquetDBFromRBP/libParquetDBFromRBP.so",
+        "lib/libParquetDBFromRBP.so"
+    ],
+    [ "$PWD/ParquetFP/libParquetFP.a",            "lib/libParquetFP.a" ],
+    [ "$PWD/ParquetFP/libParquetFP.so",           "lib/libParquetFP.so" ],
+    [ "$PWD/PartEvals/libPartEvals.a",            "lib/libPartEvals.a" ],
+    [ "$PWD/PartEvals/libPartEvals.so",           "lib/libPartEvals.so" ],
+    [ "$PWD/PartLegality/libPartLegality.a",      "lib/libPartLegality.a" ],
+    [ "$PWD/PartLegality/libPartLegality.so",     "lib/libPartLegality.so" ],
+    [ "$PWD/Partitioners/libPartitioners.a",      "lib/libPartitioners.a" ],
+    [ "$PWD/Partitioners/libPartitioners.so",     "lib/libPartitioners.so" ],
+    [ "$PWD/Partitioning/libPartitioning.a",      "lib/libPartitioning.a" ],
+    [ "$PWD/Partitioning/libPartitioning.so",     "lib/libPartitioning.so" ],
+    [ "$PWD/PlaceEvals/libPlaceEvals.a",          "lib/libPlaceEvals.a" ],
+    [ "$PWD/PlaceEvals/libPlaceEvals.so",         "lib/libPlaceEvals.so" ],
+    [ "$PWD/Placement/libPlacement.a",            "lib/libPlacement.a" ],
+    [ "$PWD/Placement/libPlacement.so",           "lib/libPlacement.so" ],
+    [ "$PWD/RBPlace/libRBPlace.a",                "lib/libRBPlace.a" ],
+    [ "$PWD/RBPlace/libRBPlace.so",               "lib/libRBPlace.so" ],
+    [ "$PWD/RowIroning/libRowIroning.a",          "lib/libRowIroning.a" ],
+    [ "$PWD/RowIroning/libRowIroning.so",         "lib/libRowIroning.so" ],
+    [ "$PWD/ShellPart/libShellPart.a",            "lib/libShellPart.a" ],
+    [ "$PWD/ShellPart/libShellPart.so",           "lib/libShellPart.so" ],
+    [ "$PWD/SmallPart/libSmallPart.a",            "lib/libSmallPart.a" ],
+    [ "$PWD/SmallPart/libSmallPart.so",           "lib/libSmallPart.so" ],
+    [ "$PWD/SmallPlacement/libSmallPlacement.a",  "lib/libSmallPlacement.a" ],
+    [ "$PWD/SmallPlacement/libSmallPlacement.so", "lib/libSmallPlacement.so" ],
+    [ "$PWD/SmallPlacers/libSmallPlacers.a",      "lib/libSmallPlacers.a" ],
+    [ "$PWD/SmallPlacers/libSmallPlacers.so",     "lib/libSmallPlacers.so" ],
+    [ "$PWD/Stats/libStats.a",                    "lib/libStats.a" ],
+    [ "$PWD/Stats/libStats.so",                   "lib/libStats.so" ]
+);
+
+sub libNeedsRefresh {
+    my $pair;
+    foreach $pair (@libLinks) {
+        my ( $src, $dst ) = @$pair;
+        return 1 if ( !-e $dst );
+        return 1 if ( !-l $dst );
+        my $target = readlink($dst);
+        return 1 if ( !defined $target || $target ne $src );
+    }
+    my %expected;
+    foreach $pair (@libLinks) {
+        $expected{ $pair->[1] } = 1;
+    }
+    opendir( LIBDIR, "$PWD/lib" ) || die "Can't read $PWD/lib";
+    while ( defined( my $entry = readdir(LIBDIR) ) ) {
+        next     if ( $entry eq "." || $entry eq ".." );
+        return 1 if ( !exists $expected{"lib/$entry"} );
+    }
+    closedir(LIBDIR);
+    return 0;
+}
+
+ensureLibDir();
+foreach my $pair (@libLinks) {
+    my ( $src, $dst ) = @$pair;
+    linkLib( $src, $dst );
+}
+unlink "a.out";
+print "\n ****************************\n";
+print " Would you like to compile/build UMpack components now ? [Y/n] ";
+$_ = <>;
+die " *** Good bye \n" if (/n/i);
+die "/bin/sh required for compilation"  unless ( -e "/bin/sh" );
+
+print "\n Would you like compiler optimization for run time\n";
+print " (but longer compilation) ? [Y/n] ";
+$_ = <>;
+my $buildBinDefault     = 0;
+my $doRegressionDefault = 1;
+if (/n/i) {
+    print "\n Would you like to compile the pack with\n";
+    print " memory-saving options ? [y/N] ";
+    $_ = <>;
+    if (/y/i) {
+        # memory-saving: disable SIGNAL_DIRECTIONS by commenting it out
+        # (reversible -- a later config run can re-enable it).
+        system
+"perl -p -i -e \'s{^\\s*(//)?\\s*#define SIGNAL_DIRECTIONS\\b}{//#define SIGNAL_DIRECTIONS}\' $PWD/ABKCommon/config.h";
+    }
+    else {
+        # keep SIGNAL_DIRECTIONS enabled (uncomment if a prior run disabled it)
+        system
+"perl -p -i -e \'s{^\\s*(//)?\\s*#define SIGNAL_DIRECTIONS\\b}{#define SIGNAL_DIRECTIONS}\' $PWD/ABKCommon/config.h";
+    }
+}
+else {
+    print "\n Would you like to compile the pack with\n";
+    print " memory-saving options ? [Y/n] ";
+    $_ = <>;
+    if (/n/i) {
+        # no memory-saving: keep SIGNAL_DIRECTIONS enabled (ensure uncommented)
+        system
+"perl -p -i -e \'s{^\\s*(//)?\\s*#define SIGNAL_DIRECTIONS\\b}{#define SIGNAL_DIRECTIONS}\' $PWD/ABKCommon/config.h";
+    }
+    else {
+        # memory-saving (default): disable SIGNAL_DIRECTIONS by commenting it out
+        system
+"perl -p -i -e \'s{^\\s*(//)?\\s*#define SIGNAL_DIRECTIONS\\b}{//#define SIGNAL_DIRECTIONS}\' $PWD/ABKCommon/config.h";
+    }
+
+    $platfOpt = "";
+    if ($gpp) {
+        system("g++ -march=native -c ABKCommon/seed.cxx 2> /dev/null");
+        if ( -e "seed.o" ) {
+            unlink "seed.o";
+            print
+" Your g++ supports -march=native ; would you like to use it ? [Y/n] ";
+            $_        = <>;
+            $platfOpt = "-march=native" unless /n/i;
+        }
+    }
+    print "\n Turning on compiler optimization ... cutting down diagnostics\n";
+    $MAKE =~ s/make/makeOpt/g;
+    system
+"perl -p -i -e \'s/-O3( $platfOpt)*/-O3 $platfOpt/; s/ -ffloat-store//g\' gnu-make-wrapper.sh */makeOpt-gnu */*/makeOpt-gnu";
+    if ( $MAKE =~ /gnu/i ) {
+        print
+          "\n Would you like to build a regression-only version (recommended\n";
+        print
+" with new distributions) by disabling some optimizations that interfere\n";
+        print
+          " with regression test accuracy (A production build can be made by\n";
+        print
+" rerunning this config script at another time and answering no to this\n";
+        print " question) ? [y/N] ";
+        $_ = <>;
+        if (/y/i) {
+            print
+"\n Disabling compiler optimizations that may interfere with regression testing\n";
+            print
+" (adding -ffloat-store, removing -march=native)\n";
+            # -march=native produces architecture-specific FP rounding that
+            # diverges from the precomputed expected.out (e.g. tiny epsilon
+            # penalties), so strip it for regression-only builds. -funroll-loops
+            # is kept; it is a real optimization and does not affect regression.
+            system
+"perl -p -i -e \'s/-O3/-O3 -ffloat-store/; s/ -march=native//g\' gnu-make-wrapper.sh */makeOpt-gnu */*/makeOpt-gnu";
+        }
+        else {
+            $buildBinDefault     = 1;
+            $doRegressionDefault = 0;
+            print
+"\n Allowing compiler optimizations that may interfere with regression testing\n";
+        }
+    }
+}
+
+sub cleanLibs();
+sub buildLibs();
+
+unlink "a.out";
+cleanLibs();
+
+chomp( $PWD = `pwd` );
+chdir "ABKCommon";
+print "\nChecking pointer size in executables: ";
+system "$MAKE -s numbits";
+die "\nCould not compile binary to determine pointer size!"
+  unless ( -e "numbits.exe" );
+$nbits = `./numbits.exe`;
+die
+  "\nCould not run dynamic executable. Be sure to set LD_LIBRARY_PATH properly!"
+  if ( $nbits eq "" );
+print "$nbits bits\n\n";
+
+print "\nChecking for compiled code bugs: ";
+system "$MAKE -s errorcheck";
+die "\nCould not compile binary to check for compiled code bugs!"
+  unless ( -e "errorcheck.exe" );
+$compiler_error = `./errorcheck.exe`;
+if ( $compiler_error eq "" ) {
+    print "No errors detected!\n\n";
+}
+else {
+    print <<END;
+
+
+  This script has detected a bug in the code produced by your
+current compiler. This may be a bug in the compiler or shared
+libraries on your machine. It is likely that binaries compiled
+in this setup may not behave properly. For more information
+on this bug, take a look at the source code in
+ABKCommon/errorcheck.cxx.
+
+END
+    print "Do you still wish to proceed and compile binaries that may\n";
+    print "behave unexpectedly? [y,N] ";
+    $_ = <>;
+    die "Good bye.\n" unless (/y/i);
+}
+chdir "$PWD";
+
+buildLibs();
+unlink "a.out";
+print "\n ****************************\n";
+if ($doRegressionDefault) {
+    print "Would you like to test UMpack components now? [Y,n] ";
+    $_ = <>;
+    if ( !/n/i ) {
+        testLibs();
+        unlink "a.out";
+    }
+}
+else {
+    print "Would you like to test UMpack components now? [y,N] ";
+    $_ = <>;
+    if (/y/i) {
+        testLibs();
+        unlink "a.out";
+    }
+}
+
+exit;
+
+print "\n ****************************\n";
+if ($buildBinDefault) {
+    print "Would you like to build static executables for Capo,\n";
+    print
+"partitioners and utilities (to be stored in the bin/ subdirectory)? [Y,n] ";
+    $_ = <>;
+    if ( !/n/i ) {
+        buildBinaries();
+        unlink "a.out";
+    }
+}
+else {
+    print "Would you like to build static executables for Capo,\n";
+    print
+"partitioners and utilities (to be stored in the bin/ subdirectory)? [y,N] ";
+    $_ = <>;
+    if (/y/i) {
+        buildBinaries();
+        unlink "a.out";
+    }
+}
+
+# print "\n\n Please read the files in the Documentation directory\n".
+#      "(especially the MetaPlacer-CapoFAQ) before using the Capo\n".
+#      "binaries for the first time.\n";
+# print "\n *** Good bye\n";
+
+sub buildBinaries() {
+    chomp( $PWD = `pwd` );
+    if ( !-e "$PWD/bin" ) {
+        print "\nCreating directory $PWD/bin ...\n";
+        system "mkdir $PWD/bin" || die "Can't create $PWD/bin";
+    }
+
+    print "\nAll static binaries will be stored in $PWD/bin ...\n";
+
+    chomp( $strip = `which strip` );
+    $strip = "" if $strip =~ /not found/i;
+
+    $compile = "$MAKE testS";
+
+    chdir "ABKCommon";
+    print "\nChecking static binary compilation: ";
+    system "$MAKE -s numbitS";
+    if ( -e "numbits.exeS" ) {
+        print "SUCCESS!\n";
+        unlink "numbits.exeS";
+    }
+    else {
+        print "FAILED!\n";
+        print "\nYou cannot compile true static binaries. Would you like\n";
+        print "to compile pseudo-static binaries (system libraries\n";
+        print "will be linked dynamically) instead? [Y,n] ";
+        $_ = <>;
+        die "\n *** Good bye\n" if (/n/i);
+        $compile = "$MAKE testSPseudo";
+        system "/bin/mkdir $PWD/lib/save"
+          || die "Can't make directory to save shared libraries";
+        system "/bin/mv -f $PWD/lib/*.so $PWD/lib/save/"
+          || die "Can't move shared libraries";
+    }
+    chdir "$PWD";
+
+    chomp( $OS = `uname` );
+    if ( $OS eq "Linux" ) { $OS = "Lnx"; }
+    $FMver      = `perl -n -e \"print /FMPart(\\d.*)/\" Versions`;
+    $MLver      = `perl -n -e \"print /MLPart(\\d.*)/\" Versions`;
+    $Capover    = `perl -n -e \"print /Capo(\\d.*)/\" Versions`;
+    $Parquetver = `perl -n -e \"print /ParquetFP(\\d.*)/\" Versions`;
+
+    if ( -e "$PWD/CongestionMaps" ) {
+        print "\nCompiling CongestionMaps binary ...\n";
+        chdir "CongestionMaps";
+        system $compile;
+        system
+"mv -f CongestionMapsTest0.exeS* $PWD/bin/CongestionMaps-$OS$nbits.exe";
+        system "$strip $PWD/bin/CongestionMaps-$OS$nbits.exe"
+          unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/FMPart" ) {
+        print "\nCompiling FMPart binary ...\n";
+        chdir "FMPart";
+        system $compile;
+        system "mv -f FMPartTest3.exeS* $PWD/bin/FMPart-$FMver-$OS$nbits.exe";
+        system "$strip $PWD/bin/FMPart-$FMver-$OS$nbits.exe"
+          unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/MetaPlacer" ) {
+        print "\nCompiling MetaPlacer binary ...\n";
+        chdir "MetaPlacer";
+        system $compile;
+        system
+"mv -f MetaPlacerTest0.exeS* $PWD/bin/MetaPl-Capo$Capover-$OS$nbits.exe";
+        system "$strip $PWD/bin/MetaPl-Capo$Capover-$OS$nbits.exe"
+          unless $strip eq "";
+        system
+"ln -s $PWD/bin/MetaPl-Capo$Capover-$OS$nbits.exe $PWD/bin/Rooster.exe";
+        system
+"ln -s $PWD/bin/MetaPl-Capo$Capover-$OS$nbits.exe $PWD/bin/Scampi.exe";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/MLPart" ) {
+        print "\nCompiling MLPart binary ...\n";
+        chdir "MLPart";
+        system $compile;
+        system "mv -f MLPartTest2.exeS* $PWD/bin/MLPart-$MLver-$OS$nbits.exe";
+        system "$strip $PWD/bin/MLPart-$MLver-$OS$nbits.exe"
+          unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/RBPlace" ) {
+        print "\nCompiling RBPlace binaries ...\n";
+        chdir "RBPlace";
+        system $compile;
+        system "mv -f RBPlaceTest1.exeS* $PWD/bin/WLCalc-$OS$nbits.exe";
+        system "$strip $PWD/bin/WLCalc-$OS$nbits.exe" unless $strip eq "";
+        system "mv -f RBPlaceTest2.exeS* $PWD/bin/LayoutGen-$OS$nbits.exe";
+        system "$strip $PWD/bin/LayoutGen-$OS$nbits.exe" unless $strip eq "";
+        system "mv -f RBPlaceTest4.exeS* $PWD/bin/PlaceUtil-$OS$nbits.exe";
+        system "$strip $PWD/bin/PlaceUtil-$OS$nbits.exe" unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/RBPlFromDB" ) {
+        print "\nCompiling RBPlFromDB binary ...\n";
+        chdir "RBPlFromDB";
+        system $compile;
+        system
+          "mv -f RBPlFromDBTest0.exeS* $PWD/bin/LDToBookConvert-$OS$nbits.exe";
+        system "$strip $PWD/bin/LDToBookConvert-$OS$nbits.exe"
+          unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/RowIroning" ) {
+        print "\nCompiling RowIroning binary ...\n";
+        chdir "RowIroning";
+        system $compile;
+        system "mv -f RowIroningTest1.exeS* $PWD/bin/RowIroning-$OS$nbits.exe";
+        system "$strip $PWD/bin/RowIroning-$OS$nbits.exe" unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/ParquetFP" ) {
+        print "\nCompiling Parquet binary ...\n";
+        chdir "ParquetFP";
+        system $compile;
+        system "mv -f Parquet.exeS* $PWD/bin/Parquet-$Parquetver-$OS$nbits.exe";
+        system "$strip $PWD/bin/Parquet-$Parquetver-$OS$nbits.exe"
+          unless $strip eq "";
+        system "rm -f *.exeS*";
+        chdir "$PWD";
+    }
+
+    if ( -e "$PWD/lib/save" ) {
+        system "mv -f $PWD/lib/save/*.so $PWD/lib"
+          || die "Can't move shared libraries";
+        system "rm -rf $PWD/lib/save/";
+    }
+}
+
+sub cleanLibs() {
+    chomp( $PWD = `pwd` );
+    $CurrentPWD = $PWD;
+    print " *** CLEANING LIBRARIES ..... \n";
+    chdir "$PWD/ABKCommon"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/ABKCommon"        || die "Can't make it";
+    chdir "$PWD/AnalytPl"                          || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/AnalytPl"         || die "Can't make it";
+    chdir "$PWD/Capo"                              || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Capo"             || die "Can't make it";
+    chdir "$PWD/ClusteredHGraph"                   || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/ClusteredHGraph"  || die "Can't make it";
+    chdir "$PWD/Combi"                             || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Combi"            || die "Can't make it";
+    chdir "$PWD/CongestionMaps"                    || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/CongestionMaps"   || die "Can't make it";
+    chdir "$PWD/Constraints"                       || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Constraints"      || die "Can't make it";
+    chdir "$PWD/Ctainers"                          || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Ctainers"         || die "Can't make it";
+    chdir "$PWD/FMPart"                            || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/FMPart"           || die "Can't make it";
+    chdir "$PWD/FilledHier"                        || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/FilledHier"       || die "Can't make it";
+    chdir "$PWD/FixOr"                             || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/FixOr"            || die "Can't make it";
+    chdir "$PWD/GenHier"                           || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/GenHier"          || die "Can't make it";
+    chdir "$PWD/GeomTrees"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/GeomTrees"        || die "Can't make it";
+    chdir "$PWD/Geoms"                             || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Geoms"            || die "Can't make it";
+    chdir "$PWD/HGraph"                            || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/HGraph"           || die "Can't make it";
+    chdir "$PWD/HGraphWDims"                       || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/HGraphWDims"      || die "Can't make it";
+    chdir "$PWD/MLPart"                            || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/MLPart"           || die "Can't make it";
+    chdir "$PWD/ParquetDBFromRBP"                  || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/ParquetDBFromRBP" || die "Can't make it";
+    chdir "$PWD/ParquetFP"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/ParquetFP"        || die "Can't make it";
+    chdir "$PWD/PartEvals"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/PartEvals"        || die "Can't make it";
+    chdir "$PWD/PartLegality"                      || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/PartLegality"     || die "Can't make it";
+    chdir "$PWD/Partitioners"                      || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Partitioners"     || die "Can't make it";
+    chdir "$PWD/Partitioning"                      || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Partitioning"     || die "Can't make it";
+    chdir "$PWD/PlaceEvals"                        || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/PlaceEvals"       || die "Can't make it";
+    chdir "$PWD/Placement"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Placement"        || die "Can't make it";
+    chdir "$PWD/RBPlace"                           || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/RBPlace"          || die "Can't make it";
+    chdir "$PWD/RowIroning"                        || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/RowIroning"       || die "Can't make it";
+    chdir "$PWD/ShellPart"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/ShellPart"        || die "Can't make it";
+    chdir "$PWD/SmallPart"                         || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/SmallPart"        || die "Can't make it";
+    chdir "$PWD/SmallPlacement"                    || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/SmallPlacement"   || die "Can't make it";
+    chdir "$PWD/SmallPlacers"                      || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/SmallPlacers"     || die "Can't make it";
+    chdir "$PWD/Stats"                             || die "Can't chdir";
+    system "$MAKE clean PWD=$PWD/Stats"            || die "Can't make it";
+    chdir "$CurrentPWD";
+}
+
+sub buildLibs() {
+    chomp( $PWD = `pwd` );
+    $CurrentPWD = $PWD;
+    print " *** BUILDING LIBRARIES ..... \n";
+    chdir "$PWD/ABKCommon"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/ABKCommon"        || die "Can't make it";
+    chdir "$PWD/AnalytPl"                      || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/AnalytPl"         || die "Can't make it";
+    chdir "$PWD/Capo"                          || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Capo"             || die "Can't make it";
+    chdir "$PWD/ClusteredHGraph"               || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/ClusteredHGraph"  || die "Can't make it";
+    chdir "$PWD/Combi"                         || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Combi"            || die "Can't make it";
+    chdir "$PWD/CongestionMaps"                || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/CongestionMaps"   || die "Can't make it";
+    chdir "$PWD/Constraints"                   || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Constraints"      || die "Can't make it";
+    chdir "$PWD/Ctainers"                      || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Ctainers"         || die "Can't make it";
+    chdir "$PWD/FMPart"                        || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/FMPart"           || die "Can't make it";
+    chdir "$PWD/FilledHier"                    || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/FilledHier"       || die "Can't make it";
+    chdir "$PWD/FixOr"                         || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/FixOr"            || die "Can't make it";
+    chdir "$PWD/GenHier"                       || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/GenHier"          || die "Can't make it";
+    chdir "$PWD/GeomTrees"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/GeomTrees"        || die "Can't make it";
+    chdir "$PWD/Geoms"                         || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Geoms"            || die "Can't make it";
+    chdir "$PWD/HGraph"                        || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/HGraph"           || die "Can't make it";
+    chdir "$PWD/HGraphWDims"                   || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/HGraphWDims"      || die "Can't make it";
+    chdir "$PWD/MLPart"                        || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/MLPart"           || die "Can't make it";
+    chdir "$PWD/ParquetDBFromRBP"              || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/ParquetDBFromRBP" || die "Can't make it";
+    chdir "$PWD/ParquetFP"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/ParquetFP"        || die "Can't make it";
+    chdir "$PWD/PartEvals"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/PartEvals"        || die "Can't make it";
+    chdir "$PWD/PartLegality"                  || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/PartLegality"     || die "Can't make it";
+    chdir "$PWD/Partitioners"                  || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Partitioners"     || die "Can't make it";
+    chdir "$PWD/Partitioning"                  || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Partitioning"     || die "Can't make it";
+    chdir "$PWD/PlaceEvals"                    || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/PlaceEvals"       || die "Can't make it";
+    chdir "$PWD/Placement"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Placement"        || die "Can't make it";
+    chdir "$PWD/RBPlace"                       || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/RBPlace"          || die "Can't make it";
+    chdir "$PWD/RowIroning"                    || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/RowIroning"       || die "Can't make it";
+    chdir "$PWD/ShellPart"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/ShellPart"        || die "Can't make it";
+    chdir "$PWD/SmallPart"                     || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/SmallPart"        || die "Can't make it";
+    chdir "$PWD/SmallPlacement"                || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/SmallPlacement"   || die "Can't make it";
+    chdir "$PWD/SmallPlacers"                  || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/SmallPlacers"     || die "Can't make it";
+    chdir "$PWD/Stats"                         || die "Can't chdir";
+    system "$MAKE   PWD=$PWD/Stats"            || die "Can't make it";
+    chdir "$CurrentPWD";
+}
+
+sub testLibs() {
+    chomp( $PWD = `pwd` );
+    $CurrentPWD = $PWD;
+    print
+"\n** Note: a few regression tests may fail on non-Sparc processors (e.g.,\n",
+"** older Pentium chips) due to differences in floating-point arithmetics\n";
+    print " *** TESTING LIBRARIES ..... \n";
+    chdir "$PWD/ABKCommon"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/ABKCommon" || die "Can't make it";
+    print " *************** ABKCommon *************\n";
+    system "./regression"                 || die "Can't run regression";
+    chdir "$PWD/AnalytPl"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/AnalytPl" || die "Can't make it";
+    print " *************** AnalytPl *************\n";
+    system "./regression"             || die "Can't run regression";
+    chdir "$PWD/Capo"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Capo" || die "Can't make it";
+    print " *************** Capo *************\n";
+    system "./regression"                        || die "Can't run regression";
+    chdir "$PWD/ClusteredHGraph"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/ClusteredHGraph" || die "Can't make it";
+    print " *************** ClusteredHGraph *************\n";
+    system "./regression"              || die "Can't run regression";
+    chdir "$PWD/Combi"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Combi" || die "Can't make it";
+    print " *************** Combi *************\n";
+    system "./regression"                       || die "Can't run regression";
+    chdir "$PWD/CongestionMaps"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/CongestionMaps" || die "Can't make it";
+    print " *************** CongestionMaps *************\n";
+    system "./regression"                    || die "Can't run regression";
+    chdir "$PWD/Constraints"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Constraints" || die "Can't make it";
+    print " *************** Constraints *************\n";
+    system "./regression"                 || die "Can't run regression";
+    chdir "$PWD/Ctainers"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Ctainers" || die "Can't make it";
+    print " *************** Ctainers *************\n";
+    system "./regression"               || die "Can't run regression";
+    chdir "$PWD/FMPart"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/FMPart" || die "Can't make it";
+    print " *************** FMPart *************\n";
+    system "./regression"                   || die "Can't run regression";
+    chdir "$PWD/FilledHier"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/FilledHier" || die "Can't make it";
+    print " *************** FilledHier *************\n";
+    system "./regression"                || die "Can't run regression";
+    chdir "$PWD/FixOr"                   || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/FixOr"   || die "Can't make it";
+    print " *************** FixOr *************\n";
+    system "./regression"                || die "Can't run regression";
+    chdir "$PWD/GenHier"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/GenHier" || die "Can't make it";
+    print " *************** GenHier *************\n";
+    system "./regression"                  || die "Can't run regression";
+    chdir "$PWD/GeomTrees"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/GeomTrees" || die "Can't make it";
+    print " *************** GeomTrees *************\n";
+    system "./regression"              || die "Can't run regression";
+    chdir "$PWD/Geoms"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Geoms" || die "Can't make it";
+    print " *************** Geoms *************\n";
+    system "./regression"               || die "Can't run regression";
+    chdir "$PWD/HGraph"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/HGraph" || die "Can't make it";
+    print " *************** HGraph *************\n";
+    system "./regression"                    || die "Can't run regression";
+    chdir "$PWD/HGraphWDims"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/HGraphWDims" || die "Can't make it";
+    print " *************** HGraphWDims *************\n";
+    system "./regression"               || die "Can't run regression";
+    chdir "$PWD/MLPart"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/MLPart" || die "Can't make it";
+    print " *************** MLPart *************\n";
+    system "./regression"                         || die "Can't run regression";
+    chdir "$PWD/ParquetDBFromRBP"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/ParquetDBFromRBP" || die "Can't make it";
+    print " *************** ParquetDBFromRBP *************\n";
+    system "./regression"                  || die "Can't run regression";
+    chdir "$PWD/ParquetFP"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/ParquetFP" || die "Can't make it";
+    print " *************** ParquetFP *************\n";
+    system "./regression"                  || die "Can't run regression";
+    chdir "$PWD/PartEvals"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/PartEvals" || die "Can't make it";
+    print " *************** PartEvals *************\n";
+    system "./regression"                     || die "Can't run regression";
+    chdir "$PWD/PartLegality"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/PartLegality" || die "Can't make it";
+    print " *************** PartLegality *************\n";
+    system "./regression"                     || die "Can't run regression";
+    chdir "$PWD/Partitioners"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Partitioners" || die "Can't make it";
+    print " *************** Partitioners *************\n";
+    system "./regression"                     || die "Can't run regression";
+    chdir "$PWD/Partitioning"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Partitioning" || die "Can't make it";
+    print " *************** Partitioning *************\n";
+    system "./regression"                   || die "Can't run regression";
+    chdir "$PWD/PlaceEvals"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/PlaceEvals" || die "Can't make it";
+    print " *************** PlaceEvals *************\n";
+    system "./regression"                  || die "Can't run regression";
+    chdir "$PWD/Placement"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Placement" || die "Can't make it";
+    print " *************** Placement *************\n";
+    system "./regression"                || die "Can't run regression";
+    chdir "$PWD/RBPlace"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/RBPlace" || die "Can't make it";
+    print " *************** RBPlace *************\n";
+    system "./regression"                      || die "Can't run regression";
+    chdir "$PWD/RowIroning"                    || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/RowIroning"    || die "Can't make it";
+    print " *************** RowIroning *************\n";
+    system "./regression"                      || die "Can't run regression";
+    chdir "$PWD/ShellPart"                     || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/ShellPart"     || die "Can't make it";
+    print " *************** ShellPart *************\n";
+    system "./regression"                  || die "Can't run regression";
+    chdir "$PWD/SmallPart"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/SmallPart" || die "Can't make it";
+    print " *************** SmallPart *************\n";
+    system "./regression"                       || die "Can't run regression";
+    chdir "$PWD/SmallPlacement"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/SmallPlacement" || die "Can't make it";
+    print " *************** SmallPlacement *************\n";
+    system "./regression"                     || die "Can't run regression";
+    chdir "$PWD/SmallPlacers"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/SmallPlacers" || die "Can't make it";
+    print " *************** SmallPlacers *************\n";
+    system "./regression"              || die "Can't run regression";
+    chdir "$PWD/Stats"                 || die "Can't chdir";
+    system "$MAKE test PWD=$PWD/Stats" || die "Can't make it";
+    print " *************** Stats *************\n";
+    system "./regression" || die "Can't run regression";
+    chdir "$CurrentPWD";
+}
+
+sub precompileHeaders() {
+    chomp( $PWD = `pwd` );
+    $CurrentPWD = $PWD;
+    print " *** PRECOMPILING HEADERS ..... \n";
+    chdir "$PWD/ABKCommon"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/ABKCommon"        || die "Can't make it";
+    chdir "$PWD/AnalytPl"                               || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/AnalytPl"         || die "Can't make it";
+    chdir "$PWD/Capo"                                   || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Capo"             || die "Can't make it";
+    chdir "$PWD/ClusteredHGraph"                        || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/ClusteredHGraph"  || die "Can't make it";
+    chdir "$PWD/Combi"                                  || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Combi"            || die "Can't make it";
+    chdir "$PWD/CongestionMaps"                         || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/CongestionMaps"   || die "Can't make it";
+    chdir "$PWD/Constraints"                            || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Constraints"      || die "Can't make it";
+    chdir "$PWD/Ctainers"                               || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Ctainers"         || die "Can't make it";
+    chdir "$PWD/FMPart"                                 || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/FMPart"           || die "Can't make it";
+    chdir "$PWD/FilledHier"                             || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/FilledHier"       || die "Can't make it";
+    chdir "$PWD/FixOr"                                  || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/FixOr"            || die "Can't make it";
+    chdir "$PWD/GenHier"                                || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/GenHier"          || die "Can't make it";
+    chdir "$PWD/GeomTrees"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/GeomTrees"        || die "Can't make it";
+    chdir "$PWD/Geoms"                                  || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Geoms"            || die "Can't make it";
+    chdir "$PWD/HGraph"                                 || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/HGraph"           || die "Can't make it";
+    chdir "$PWD/HGraphWDims"                            || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/HGraphWDims"      || die "Can't make it";
+    chdir "$PWD/MLPart"                                 || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/MLPart"           || die "Can't make it";
+    chdir "$PWD/ParquetDBFromRBP"                       || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/ParquetDBFromRBP" || die "Can't make it";
+    chdir "$PWD/ParquetFP"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/ParquetFP"        || die "Can't make it";
+    chdir "$PWD/PartEvals"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/PartEvals"        || die "Can't make it";
+    chdir "$PWD/PartLegality"                           || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/PartLegality"     || die "Can't make it";
+    chdir "$PWD/Partitioners"                           || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Partitioners"     || die "Can't make it";
+    chdir "$PWD/Partitioning"                           || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Partitioning"     || die "Can't make it";
+    chdir "$PWD/PlaceEvals"                             || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/PlaceEvals"       || die "Can't make it";
+    chdir "$PWD/Placement"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Placement"        || die "Can't make it";
+    chdir "$PWD/RBPlace"                                || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/RBPlace"          || die "Can't make it";
+    chdir "$PWD/RowIroning"                             || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/RowIroning"       || die "Can't make it";
+    chdir "$PWD/ShellPart"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/ShellPart"        || die "Can't make it";
+    chdir "$PWD/SmallPart"                              || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/SmallPart"        || die "Can't make it";
+    chdir "$PWD/SmallPlacement"                         || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/SmallPlacement"   || die "Can't make it";
+    chdir "$PWD/SmallPlacers"                           || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/SmallPlacers"     || die "Can't make it";
+    chdir "$PWD/Stats"                                  || die "Can't chdir";
+    system "$MAKE gch_select PWD=$PWD/Stats"            || die "Can't make it";
+    chdir "$CurrentPWD";
+}

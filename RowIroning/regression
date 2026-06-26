@@ -1,0 +1,38 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+PROG_BB="./RowIroningTest1.exe -smPlAlgo Branch"
+PROG_DP="./RowIroningTest1.exe -smPlAlgo DynamicP"
+
+/bin/rm -f seeds.out seeds.in
+
+echo "___ branch and bound tests ______" > new.out
+echo "___ size 7 tests _____" >> new.out
+$PROG_BB -f TESTS/C432a.aux >> new.out 2>&1
+$PROG_BB -f TESTS/primary1.nf.WS10.aux >> new.out 2>&1
+
+echo "___ Dynamic Programming tests _____" >> new.out
+echo "___ size 8 tests _____" >> new.out
+$PROG_DP -f TESTS/C432a.aux -ironWindow 8 >> new.out 2>&1
+$PROG_DP -f TESTS/primary1.nf.WS10.aux -ironWindow 8 >> new.out 2>&1
+
+egrep -v "(Created|took|User|Platform|Memory)" new.out > newout.notime
+egrep -v "(Created|took|User|Platform|Memory)" expected.out > expectedout.notime
+$DIFF newout.notime expectedout.notime > diffs.notime
+
+echo " "
+echo "Differences from precomputed results"
+$WC diffs.notime
+
+rm -f seeds.out seeds.in expectedout.notime
+test ! -s diffs.notime || exit 1

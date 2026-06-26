@@ -1,0 +1,186 @@
+___ branch and bound tests ______
+___ size 7 tests _____
+Reading TESTS/C432a.aux
+Reading TESTS/C432a.aux
+ Reading TESTS/C432a.nodes ... 
+ Reading TESTS/C432a.nets ... 
+Finished reading TESTS/C432a.aux and referenced files
+ Reading TESTS/C432.scl ... 
+ Reading TESTS/C432a.pl ... 
+Finished reading TESTS/C432a.aux and referenced files
+ Running overlap removal ...
+  HPWL before overlap remover is 491
+ Removing overlaps took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+  Discovered 0 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 491
+  HPWL w pins                 is 491
+  % increase in HPWL is 0
+ ====== Launching row ironing ... 
+ Row ironing parameters : 
+   Num. passes    : 1
+   Window size    : 12
+   Overlap        : 4
+   WS Chunk Cap   : 3
+   Two Dimensional: 0
+   Mixed(1D&2D)   : 0
+   Cluster        : 0
+   Use DP         : 1
+   Verbosity      :  Verbosity levels : 3
+ For actions : 1,   For sys resources : 1,   For major stats : 1
+
+Initial Origin-to-Origin WL: 491
+Initial Pin-to-Pin WL:       491
+ Pass 0 took :  0.136 user, 1.2e-02 system, 0 real, 1.248 norm'd sec 
+  Pin-to-Pin HPWL after pass: 460
+ Row ironing took :  0.138 user, 1.2e-02 system, 0 real, 1.266 norm'd sec 
+  % decrease in HPWL is 6.314
+ Running overlap removal ...
+  HPWL before overlap remover is 460
+ Removing overlaps took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+  Discovered 0 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 460
+  HPWL w pins                 is 460
+  % increase in HPWL is 0
+ Final Origin-to-Origin WL: 460
+ Final Pin-to-Pin WL:       460
+Reading TESTS/primary1.nf.WS10.aux
+Reading TESTS/primary1.nf.WS10.aux
+ Reading TESTS/primary1.nf.nodes ... 
+ Reading TESTS/primary1.nf.nets ... 
+ Reading TESTS/primary1.nf.wts ... 
+Finished reading TESTS/primary1.nf.WS10.aux and referenced files
+ Reading TESTS/primary1.nf.WS10.scl ... 
+ Reading TESTS/primary1.nf.WS10.pl ... 
+Finished reading TESTS/primary1.nf.WS10.aux and referenced files
+ Running overlap removal ...
+  HPWL before overlap remover is 1.0516e+06
+ Removing overlaps took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+  Discovered 10 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 1.05161e+06
+  HPWL w pins                 is 1.05161e+06
+  % increase in HPWL is 0.001
+ ====== Launching row ironing ... 
+ Row ironing parameters : 
+   Num. passes    : 1
+   Window size    : 12
+   Overlap        : 4
+   WS Chunk Cap   : 3
+   Two Dimensional: 0
+   Mixed(1D&2D)   : 0
+   Cluster        : 0
+   Use DP         : 1
+   Verbosity      :  Verbosity levels : 3
+ For actions : 1,   For sys resources : 1,   For major stats : 1
+
+Initial Origin-to-Origin WL: 1.05161e+06
+Initial Pin-to-Pin WL:       1.05161e+06
+ Pass 0 took :  0.277 user, 1.8e-02 system, 0 real, 2.65 norm'd sec 
+  Pin-to-Pin HPWL after pass: 1.04888e+06
+ Row ironing took :  0.286 user, 1.9e-02 system, 0 real, 2.736 norm'd sec 
+  % decrease in HPWL is 0.259
+ Running overlap removal ...
+  HPWL before overlap remover is 1.04888e+06
+ Removing overlaps took  0.001 user, 0.0e+00 system, 0 real, 0.00953644 norm'd sec 
+  Discovered 0 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 1.04888e+06
+  HPWL w pins                 is 1.04888e+06
+  % increase in HPWL is 0
+ Final Origin-to-Origin WL: 1.04888e+06
+ Final Pin-to-Pin WL:       1.04888e+06
+___ Dynamic Programming tests _____
+___ size 8 tests _____
+Reading TESTS/C432a.aux
+Reading TESTS/C432a.aux
+ Reading TESTS/C432a.nodes ... 
+ Reading TESTS/C432a.nets ... 
+Finished reading TESTS/C432a.aux and referenced files
+ Reading TESTS/C432.scl ... 
+ Reading TESTS/C432a.pl ... 
+Finished reading TESTS/C432a.aux and referenced files
+ Running overlap removal ...
+  HPWL before overlap remover is 491
+ Removing overlaps took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+  Discovered 0 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 491
+  HPWL w pins                 is 491
+  % increase in HPWL is 0
+ ====== Launching row ironing ... 
+ Row ironing parameters : 
+   Num. passes    : 1
+   Window size    : 8
+   Overlap        : 4
+   WS Chunk Cap   : 3
+   Two Dimensional: 0
+   Mixed(1D&2D)   : 0
+   Cluster        : 0
+   Use DP         : 1
+   Verbosity      :  Verbosity levels : 3
+ For actions : 1,   For sys resources : 1,   For major stats : 1
+
+Initial Origin-to-Origin WL: 491
+Initial Pin-to-Pin WL:       491
+ Pass 0 took :  0.104 user, 1.6e-02 system, 0 real, 1.05 norm'd sec 
+  Pin-to-Pin HPWL after pass: 462
+ Row ironing took :  0.106 user, 1.6e-02 system, 0 real, 1.07 norm'd sec 
+  % decrease in HPWL is 5.906
+ Running overlap removal ...
+  HPWL before overlap remover is 462
+ Removing overlaps took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+  Discovered 0 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 462
+  HPWL w pins                 is 462
+  % increase in HPWL is 0
+ Final Origin-to-Origin WL: 462
+ Final Pin-to-Pin WL:       462
+Reading TESTS/primary1.nf.WS10.aux
+Reading TESTS/primary1.nf.WS10.aux
+ Reading TESTS/primary1.nf.nodes ... 
+ Reading TESTS/primary1.nf.nets ... 
+ Reading TESTS/primary1.nf.wts ... 
+Finished reading TESTS/primary1.nf.WS10.aux and referenced files
+ Reading TESTS/primary1.nf.WS10.scl ... 
+ Reading TESTS/primary1.nf.WS10.pl ... 
+Finished reading TESTS/primary1.nf.WS10.aux and referenced files
+ Running overlap removal ...
+  HPWL before overlap remover is 1.0516e+06
+ Removing overlaps took  0.001 user, 0.0e+00 system, 0 real, 0.0097633 norm'd sec 
+  Discovered 10 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 1.05161e+06
+  HPWL w pins                 is 1.05161e+06
+  % increase in HPWL is 0.001
+ ====== Launching row ironing ... 
+ Row ironing parameters : 
+   Num. passes    : 1
+   Window size    : 8
+   Overlap        : 4
+   WS Chunk Cap   : 3
+   Two Dimensional: 0
+   Mixed(1D&2D)   : 0
+   Cluster        : 0
+   Use DP         : 1
+   Verbosity      :  Verbosity levels : 3
+ For actions : 1,   For sys resources : 1,   For major stats : 1
+
+Initial Origin-to-Origin WL: 1.05161e+06
+Initial Pin-to-Pin WL:       1.05161e+06
+ Pass 0 took :  0.066 user, 5.0e-03 system, 0 real, 0.654 norm'd sec 
+  Pin-to-Pin HPWL after pass: 1.05048e+06
+ Row ironing took :  0.076 user, 5.0e-03 system, 0 real, 0.751 norm'd sec 
+  % decrease in HPWL is 0.108
+ Running overlap removal ...
+  HPWL before overlap remover is 1.05048e+06
+ Removing overlaps took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+  Discovered 0 overlaps 
+  Overlaps remaining: 0
+  HPWL after  overlap removal is 1.05048e+06
+  HPWL w pins                 is 1.05048e+06
+  % increase in HPWL is 0
+ Final Origin-to-Origin WL: 1.05048e+06
+ Final Pin-to-Pin WL:       1.05048e+06

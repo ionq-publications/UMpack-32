@@ -1,0 +1,25 @@
+Weighted edge refinement results (selected=W, others=1)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0       6       5       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      11       4       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      18      17       CUT       CUT       CUT       CUT       CUT       CUT
+       3      18      17       CUT       CUT       CUT       CUT       CUT       CUT
+       4      41       7       CUT       CUT     UNCUT     UNCUT     UNCUT     UNCUT
+Weighted edge refinement results (selected=20*W, others=W)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0       6       5     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      11       4     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      18      17       CUT       CUT       CUT       CUT       CUT       CUT
+       3      18      17       CUT       CUT       CUT       CUT       CUT       CUT
+       4      41       7     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+Weighted edge refinement results (selected=W+20000, others=W)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0       6       5     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT       CUT
+       1      11       4     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      18      17       CUT       CUT       CUT       CUT       CUT       CUT
+       3      18      17       CUT       CUT       CUT       CUT       CUT       CUT
+       4      41       7     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT       CUT
+When an edge becomes many times heavier than its adjacent edges,
+a smaller-cut solution exists. However, for a high-degree edge, FM may not find it.
+For a moderately heavier weight, what matters is how many adjacent edges
+must become cut to allow this edge to be uncut.

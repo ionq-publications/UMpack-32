@@ -1,0 +1,8 @@
+#!/bin/sh
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+helper_dir=$script_dir
+while [ ! -f "$helper_dir/gnu-make-wrapper.sh" ]; do
+	[ "$helper_dir" = "/" ] && break
+	helper_dir=$(dirname "$helper_dir")
+done
+exec "$helper_dir/gnu-make-wrapper.sh" makeOpt-gnu "$script_dir" "$@"

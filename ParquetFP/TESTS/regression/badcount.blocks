@@ -1,0 +1,7 @@
+UCSC blocks 1.0
+
+NumSoftRectangularBlocks : 0
+NumHardRectilinearBlocks : 2
+NumTerminals : 0
+
+only0 hardrectilinear 4 (0, 0) (0, 2) (2, 2) (2, 0)

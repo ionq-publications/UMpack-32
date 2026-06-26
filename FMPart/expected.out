@@ -1,0 +1,77 @@
+------------  Running test 0a...
+# Built on Jun 16 2026 at 21:49:44
+#  on Unix 
+#  from FMPartTest0.cxx and libraries  
+#  using GNU C/C++ 13.3.0 compiler 
+HGraph Parameters: 
+   makeAllSrcSnk : 1
+   removeBigNets : 0
+   netThreshold  : 4294967295
+   nodeSortMethod: no sort
+   edgeSortMethod: no sort
+   shredTopology: Grid
+
+Reading TESTS/primary1+.aux
+ Done reading HGraph
+ Reading TESTS/2way10%.blk ... 
+
+Terminals specified in .net or .netD file, but no .fix file given.
+  Making all nodes nonterminal (Warning in partProbIO.cxx:1161)
+Reading PartitioningProblem took File seeds.in exists and will override all seeds, including hardcoded ones 
+ 0.000781 user, 0.0e+00 system, 0 real, 0.127067 norm'd sec 
+Init+Read+PostProcess for PartProblem took  0.00334 user, 0.0e+00 system, 0 real, 0.543413 norm'd sec 
+   Partitioner Parameters: 
+   Verbosity levels : 3
+ For actions : 1,   For sys resources : 1,   For major stats : 1
+   Move manager                    : FM            
+   Partitioning evaluator          : NetCutWNetVec   
+   Solution generator              : RandomizedEngineers
+   Legalize only                   : false
+   Use clip / early stop           : false/false
+   Print hill stats                : false
+   Min pass improvement            : 0%
+   Max num passes                  : 0
+   Relaxed tolerance passes        : 0
+   Randomized                      : false
+   Uncorking                       : 1
+   Do first LIFO pass              : false
+   Allow corking nodes             : false
+   Allow illegal moves             : false
+   Tie break on pin counts         : false
+   Wiggle terminals                : true
+   Save move log                   : false
+   Use weights                     : true
+   Use map based gain cont         : false
+   Use hash based gain cont        : false
+   Do not use hash based gain cont : false
+
+# Virtual Memory usage : 9.18359MB (estimate) during FMPart call #1 before runMultiStart()
+
+ Running 3 multi-starts
+ MultiStart costs : 42  93  42  
+ Legal solutions : 3 (all) 
+ Best solution:  42  Average:  59 StdDev: 24.0416
+ Areas: 6.5685e+06  5.4585e+06  
+ Pins: 1777  1131  
+
+# Virtual Memory usage : 9.18359MB (estimate) during FMPart call #1 after runMultiStart()
+
+ Cut edge sizes :  Max: 17  Min: 2  Avg: 4.64286
+     2: 5         3: 19        4: 8         5: 2         7: 2     
+     8: 1         9: 1        11: 2        16: 1        17: 1     
+  10  largest cells: 
+   1. area:      30000 (  0.249439%)  degree:  3 assignment: [ 1  ]
+   2. area:      30000 (  0.249439%)  degree:  4 assignment: [ 1  ]
+   3. area:      30000 (  0.249439%)  degree:  4 assignment: [ 1  ]
+   4. area:      30000 (  0.249439%)  degree:  4 assignment: [ 1  ]
+   5. area:      30000 (  0.249439%)  degree:  4 assignment: [ 0  ]
+   6. area:      30000 (  0.249439%)  degree:  4 assignment: [ 0  ]
+   7. area:      30000 (  0.249439%)  degree:  5 assignment: [ 1  ]
+   8. area:      30000 (  0.249439%)  degree:  4 assignment: [ 1  ]
+   9. area:      30000 (  0.249439%)  degree:  4 assignment: [ 1  ]
+  10. area:      30000 (  0.249439%)  degree:  4 assignment: [ 0  ]
+# Created      : Tue Jun 16 22:22:03 2026
+# Platform     : Linux 6.6.114.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Mon Dec  1 20:46:23 UTC 2025 x86_64 
+# User         : imarkov@IM-14-2024 
+# Virtual Memory usage : 9.18359MB (estimate)# Run-time conversion to Ultra-1 @143.5/71.5MHz, SunProCC4.2/-O5 : 162.698413
+

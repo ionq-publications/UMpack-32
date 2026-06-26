@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+RM=/bin/rm
+PROG=./ParquetDBFromRBPTest0.exe
+
+echo "------------  Running test saurabh..." >new.out
+"$PROG" -f TESTS/saurabh1.aux -s 0 -minWL -floorplan >>new.out
+echo OK
+
+egrep -i -v '(second|time|memory|minor page faults|major page faults|thrashing detected|process may be trying to use more memory than is available|memory might be consumed by other processes or file cache|^The random seed for this run is:|^NumMoves attempted:|^Final Area:|^width:|^height:|^area utilization|^whitespace)' new.out | sed 's/[[:space:]]*$//' >new.out.notime
+egrep -i -v '(second|time|memory|minor page faults|major page faults|thrashing detected|process may be trying to use more memory than is available|memory might be consumed by other processes or file cache|^The random seed for this run is:|^NumMoves attempted:|^Final Area:|^width:|^height:|^area utilization|^whitespace)' expected.out | sed 's/[[:space:]]*$//' >expected.out.notime
+
+"$DIFF" new.out.notime expected.out.notime >diffs.notime
+echo Differences from precomputed results
+echo "  lines:  words:  bytes:    error log:"
+"$WC" diffs.notime
+
+"$RM" -f new.out.notime expected.out.notime

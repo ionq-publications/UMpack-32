@@ -1,0 +1,15 @@
+UCLA nets 1.0
+
+NumNets : 3
+NumPins : 7
+
+NetDegree : 2 weighted
+hard0 B : %50 %0
+hard1 B : %-50 %0
+NetDegree : 2 link
+soft0 B : %0 %0
+term0 B
+NetDegree : 3
+hard0 B : %0 %0
+soft0 B : %0 %0
+term0 B

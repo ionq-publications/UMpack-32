@@ -1,0 +1,106 @@
+#!/bin/sh
+
+set -eu
+
+PROG=./Parquet.exe
+TMPDIR_ROOT=${TMPDIR:-/tmp}
+WORKDIR=$(mktemp -d "$TMPDIR_ROOT/parquetfp-regression.XXXXXX")
+trap 'rm -rf "$WORKDIR"' EXIT HUP INT TERM
+
+fail() {
+	echo "FAILED: $*" >&2
+	exit 1
+}
+
+run_ok() {
+	name=$1
+	shift
+	output="$WORKDIR/$name.out"
+	echo "------------  Running $name..."
+	if ! "$@" >"$output" 2>&1; then
+		cat "$output" >&2
+		fail "$name exited unsuccessfully"
+	fi
+	if grep -Eiq '(^|[^A-Za-z])(ERROR|FAIL)([^A-Za-z]|$)' "$output"; then
+		cat "$output" >&2
+		fail "$name emitted an error diagnostic"
+	fi
+	echo OK
+}
+
+run_case() {
+	name=$1
+	marker=$2
+	shift 2
+	run_ok "$name" "$@"
+	grep -Fq -- "$marker" "$WORKDIR/$name.out" || {
+		cat "$WORKDIR/$name.out" >&2
+		fail "$name did not exercise expected path: $marker"
+	}
+}
+
+expect_failure() {
+	name=$1
+	marker=$2
+	shift 2
+	output="$WORKDIR/$name.out"
+	echo "------------  Running $name..."
+	if "$@" >"$output" 2>&1; then
+		cat "$output" >&2
+		fail "$name unexpectedly succeeded"
+	fi
+	grep -Fq -- "$marker" "$output" || {
+		cat "$output" >&2
+		fail "$name did not emit expected diagnostic: $marker"
+	}
+	echo OK
+}
+
+run_ok semantic ./ParquetFPTest0.exe TESTS/regression
+run_case plot-visualization 'visualization checks passed' ./ParquetFPTest1.exe TESTS/regression
+
+: >new.out
+for benchmark in ami33 ami49 apte xerox hp; do
+	echo "------------  Running test $benchmark..." >>new.out
+	echo "------------  Running golden-$benchmark..."
+	if ! "$PROG" -f "TESTS/$benchmark" -s 0 >>new.out 2>&1; then
+		fail "golden-$benchmark exited unsuccessfully"
+	fi
+	echo OK
+done
+
+grep -Eiv '(time|seconds)' new.out >"$WORKDIR/new.out.notime"
+grep -Eiv '(time|seconds)' expected.out >"$WORKDIR/expected.out.notime"
+if ! diff -u "$WORKDIR/expected.out.notime" "$WORKDIR/new.out.notime" >diffs.notime; then
+	cat diffs.notime >&2
+	fail "golden benchmark output differs from expected.out"
+fi
+
+FAST_ARGS='-s 0 -timeInit 1 -startTime 1 -timeCool 0.1'
+# shellcheck disable=SC2086
+run_case seqpair 'Annealing with SeqPair' "$PROG" -f TESTS/xerox -FPrep SeqPair $FAST_ARGS
+# shellcheck disable=SC2086
+run_case btree-soft 'Annealing with BTree' "$PROG" -f TESTS/regression/mixed -FPrep BTree -soft $FAST_ARGS
+# shellcheck disable=SC2086
+run_case fixed-outline 'fixed-outline?     Yes' "$PROG" -f TESTS/xerox -FPrep SeqPair -AR 1 -maxWS 100 -minWL $FAST_ARGS
+# shellcheck disable=SC2086
+run_case initial-placement 'Converting placement to initial solution' "$PROG" -f TESTS/xerox -FPrep BTree -takePl -initCompact -compact $FAST_ARGS
+# shellcheck disable=SC2086
+run_case quadratic-initial 'Computing quadratic-minimum WL solution' "$PROG" -f TESTS/xerox -FPrep BTree -initQP $FAST_ARGS
+# shellcheck disable=SC2086
+run_case multilevel 'Clustering took' "$PROG" -f TESTS/xerox -FPrep BTree -solveMulti -maxTopLevelNodes 3 $FAST_ARGS
+
+run_case eval-save 'Final Area:' ./FPEvalTest1.exe -f TESTS/regression/mixed -takePl
+run_case eval-functions 'Final Area:' ./FPEvalTest2.exe -f TESTS/regression/mixed -takePl -initCompact -soft
+run_case eval-analytical 'Final Area:' ./FPEvalTest3.exe -f TESTS/regression/mixed -initQP
+run_ok eval-hierarchical ./FPEvalTest4.exe -f TESTS/xerox -FPrep BTree -maxTopLevelNodes 3 $FAST_ARGS
+
+expect_failure missing-blocks 'cannot open file' "$PROG" -f TESTS/regression/missing -s 0
+expect_failure missing-nets '.nets file could not be opened successfully' "$PROG" -f TESTS/regression/missingnets -s 0
+expect_failure bad-block-count 'Number of blocks does not tally' "$PROG" -f TESTS/regression/badcount -s 0
+expect_failure bad-net-count 'netDegree does not match number of pins' "$PROG" -f TESTS/regression/badnets -s 0
+expect_failure invalid-orientation 'converting char* to ORIENT' "$PROG" -f TESTS/regression/invalidorient -s 0
+expect_failure unknown-net-node 'is not defined in .blocks file' "$PROG" -f TESTS/regression/unknownnode -s 0
+expect_failure invalid-weight 'areaWeight should be' "$PROG" -f TESTS/xerox -areaWeight 2 -s 0
+
+echo "All ParquetFP regression tests passed"

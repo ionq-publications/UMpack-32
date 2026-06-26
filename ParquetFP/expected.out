@@ -1,0 +1,280 @@
+------------  Running test ami33...
+
+Annealer Parameters: 
+   normalizing Time:  30000
+   start Time:        30000
+   cooling Time:      0.01
+   fixed-outline?     No
+   minimize WL?       No
+   scale terminals?        Yes
+   soft blks exist?        No
+   use initial placement?  No
+   compact init plmt?      No
+   compact final plmt?     No
+   use quad-pl as initial? No
+
+Reading Nodes (files TESTS/ami33.blocks and TESTS/ami33.pl)
+Reading Nets (file TESTS/ami33.nets)
+Done creating DB 
+
+***** START: round 1 / 1 *****
+The random seed for this run is: 0
+
+----- Annealing with BTree -----
+1.03 micro seconds per move.
+NumMoves attempted: 49368
+realTime:0	userTime:0.049654
+Final Area: 1.20197e+06 WhiteSpace 3.93627% AR 0.493274 HPWL 111474
+width:  770
+height: 1561
+area utilization (wrt. total current area): 96.2128%
+whitespace       (wrt. total current area): 3.7872%
+----- Annealing with BTree -----
+Original Area: 1.20197e+06
+bottom Area: 1.20197e+06
+top Area: 1.20197e+06
+left Area: 1.20197e+06
+right Area: 1.20197e+06
+bottom-left Area: 1.20197e+06
+bottom-right Area: 1.20197e+06
+top-left Area: 1.20197e+06
+top-right Area: 1.20197e+06
+left-bottom Area: 1.20197e+06
+right-bottom Area: 1.20197e+06
+left-top Area: 1.20197e+06
+right-top Area: 1.20197e+06
+minimum Area: 1.20197e+06 in the original position.
+packing design towards the original position
+final Area: 1.20197e+06
+***** DONE:  round 1 / 1 *****
+
+***** SUMMARY of all rounds *****
+         Area: Min: 1.20197e+06 Average: 1.20197e+06 Max: 1.20197e+06
+         HPWL: Min: 111474 Average: 111474 Max: 111474
+Unweighted HPWL: Min: 111474 Average: 111474 Max: 111474
+   WhiteSpace: Min: 3.93627% Average: 3.93627% Max: 3.93627%
+Average Time: 0.049907
+------------  Running test ami49...
+
+Annealer Parameters: 
+   normalizing Time:  30000
+   start Time:        30000
+   cooling Time:      0.01
+   fixed-outline?     No
+   minimize WL?       No
+   scale terminals?        Yes
+   soft blks exist?        No
+   use initial placement?  No
+   compact init plmt?      No
+   compact final plmt?     No
+   use quad-pl as initial? No
+
+Reading Nodes (files TESTS/ami49.blocks and TESTS/ami49.pl)
+Reading Nets (file TESTS/ami49.nets)
+Done creating DB 
+
+***** START: round 1 / 1 *****
+The random seed for this run is: 0
+
+----- Annealing with BTree -----
+1.306 micro seconds per move.
+NumMoves attempted: 73304
+realTime:0	userTime:0.108825
+Final Area: 3.7485e+07 WhiteSpace 5.75413% AR 0.326797 HPWL 1.81621e+06
+width:  3500
+height: 10710
+area utilization (wrt. total current area): 94.559%
+whitespace       (wrt. total current area): 5.44105%
+----- Annealing with BTree -----
+Original Area: 3.7485e+07
+bottom Area: 3.7485e+07
+top Area: 3.7485e+07
+left Area: 3.7485e+07
+right Area: 3.7485e+07
+bottom-left Area: 3.7485e+07
+bottom-right Area: 3.7485e+07
+top-left Area: 3.7485e+07
+top-right Area: 3.7485e+07
+left-bottom Area: 3.7485e+07
+right-bottom Area: 3.7485e+07
+left-top Area: 3.7485e+07
+right-top Area: 3.7485e+07
+minimum Area: 3.7485e+07 in the original position.
+packing design towards the original position
+final Area: 3.7485e+07
+***** DONE:  round 1 / 1 *****
+
+***** SUMMARY of all rounds *****
+         Area: Min: 3.7485e+07 Average: 3.7485e+07 Max: 3.7485e+07
+         HPWL: Min: 1.81621e+06 Average: 1.81621e+06 Max: 1.81621e+06
+Unweighted HPWL: Min: 1.81621e+06 Average: 1.81621e+06 Max: 1.81621e+06
+   WhiteSpace: Min: 5.75413% Average: 5.75413% Max: 5.75413%
+Average Time: 0.109115
+------------  Running test apte...
+
+Annealer Parameters: 
+   normalizing Time:  30000
+   start Time:        30000
+   cooling Time:      0.01
+   fixed-outline?     No
+   minimize WL?       No
+   scale terminals?        Yes
+   soft blks exist?        No
+   use initial placement?  No
+   compact init plmt?      No
+   compact final plmt?     No
+   use quad-pl as initial? No
+
+Reading Nodes (files TESTS/apte.blocks and TESTS/apte.pl)
+Reading Nets (file TESTS/apte.nets)
+Done creating DB 
+
+***** START: round 1 / 1 *****
+The random seed for this run is: 0
+
+----- Annealing with BTree -----
+0.38 micro seconds per move.
+NumMoves attempted: 13464
+realTime:0	userTime:0.005377
+Final Area: 4.75287e+07 WhiteSpace 2.07708% AR 0.213567 HPWL 740626
+width:  3186
+height: 14918
+area utilization (wrt. total current area): 97.9652%
+whitespace       (wrt. total current area): 2.03481%
+----- Annealing with BTree -----
+Original Area: 4.75287e+07
+bottom Area: 4.75287e+07
+top Area: 4.75287e+07
+left Area: 4.75287e+07
+right Area: 4.75287e+07
+bottom-left Area: 4.75287e+07
+bottom-right Area: 4.75287e+07
+top-left Area: 4.75287e+07
+top-right Area: 4.75287e+07
+left-bottom Area: 4.75287e+07
+right-bottom Area: 4.75287e+07
+left-top Area: 4.75287e+07
+right-top Area: 4.75287e+07
+minimum Area: 4.75287e+07 in the original position.
+packing design towards the original position
+final Area: 4.75287e+07
+***** DONE:  round 1 / 1 *****
+
+***** SUMMARY of all rounds *****
+         Area: Min: 4.75287e+07 Average: 4.75287e+07 Max: 4.75287e+07
+         HPWL: Min: 740626 Average: 740626 Max: 740626
+Unweighted HPWL: Min: 740626 Average: 740626 Max: 740626
+   WhiteSpace: Min: 2.07708% Average: 2.07708% Max: 2.07708%
+Average Time: 0.005481
+------------  Running test xerox...
+
+Annealer Parameters: 
+   normalizing Time:  30000
+   start Time:        30000
+   cooling Time:      0.01
+   fixed-outline?     No
+   minimize WL?       No
+   scale terminals?        Yes
+   soft blks exist?        No
+   use initial placement?  No
+   compact init plmt?      No
+   compact final plmt?     No
+   use quad-pl as initial? No
+
+Reading Nodes (files TESTS/xerox.blocks and TESTS/xerox.pl)
+Reading Nets (file TESTS/xerox.nets)
+Done creating DB 
+
+***** START: round 1 / 1 *****
+The random seed for this run is: 0
+
+----- Annealing with BTree -----
+0.404 micro seconds per move.
+NumMoves attempted: 14960
+realTime:0	userTime:0.00605
+Final Area: 2.04239e+07 WhiteSpace 5.54818% AR 0.717848 HPWL 771606
+width:  3829
+height: 5334
+area utilization (wrt. total current area): 94.7435%
+whitespace       (wrt. total current area): 5.25654%
+----- Annealing with BTree -----
+Original Area: 2.04239e+07
+bottom Area: 2.04239e+07
+top Area: 2.04239e+07
+left Area: 2.04239e+07
+right Area: 2.04239e+07
+bottom-left Area: 2.04239e+07
+bottom-right Area: 2.04239e+07
+top-left Area: 2.04239e+07
+top-right Area: 2.04239e+07
+left-bottom Area: 2.04239e+07
+right-bottom Area: 2.04239e+07
+left-top Area: 2.04239e+07
+right-top Area: 2.04239e+07
+minimum Area: 2.04239e+07 in the original position.
+packing design towards the original position
+final Area: 2.04239e+07
+***** DONE:  round 1 / 1 *****
+
+***** SUMMARY of all rounds *****
+         Area: Min: 2.04239e+07 Average: 2.04239e+07 Max: 2.04239e+07
+         HPWL: Min: 771606 Average: 771606 Max: 771606
+Unweighted HPWL: Min: 771606 Average: 771606 Max: 771606
+   WhiteSpace: Min: 5.54818% Average: 5.54818% Max: 5.54818%
+Average Time: 0.006135
+------------  Running test hp...
+
+Annealer Parameters: 
+   normalizing Time:  30000
+   start Time:        30000
+   cooling Time:      0.01
+   fixed-outline?     No
+   minimize WL?       No
+   scale terminals?        Yes
+   soft blks exist?        No
+   use initial placement?  No
+   compact init plmt?      No
+   compact final plmt?     No
+   use quad-pl as initial? No
+
+Reading Nodes (files TESTS/hp.blocks and TESTS/hp.pl)
+Reading Nets (file TESTS/hp.nets)
+Done creating DB 
+
+***** START: round 1 / 1 *****
+The random seed for this run is: 0
+
+----- Annealing with BTree -----
+0.418 micro seconds per move.
+NumMoves attempted: 16456
+realTime:0	userTime:0.00683
+Final Area: 9.31392e+06 WhiteSpace 5.47343% AR 0.681818 HPWL 236882
+width:  2520
+height: 3696
+area utilization (wrt. total current area): 94.8106%
+whitespace       (wrt. total current area): 5.18939%
+----- Annealing with BTree -----
+Original Area: 9.31392e+06
+bottom Area: 9.31392e+06
+top Area: 9.31392e+06
+left Area: 9.31392e+06
+right Area: 9.31392e+06
+bottom-left Area: 9.31392e+06
+bottom-right Area: 9.31392e+06
+top-left Area: 9.31392e+06
+top-right Area: 9.31392e+06
+left-bottom Area: 9.31392e+06
+right-bottom Area: 9.31392e+06
+left-top Area: 9.31392e+06
+right-top Area: 9.31392e+06
+minimum Area: 9.31392e+06 in the original position.
+packing design towards the original position
+final Area: 9.31392e+06
+***** DONE:  round 1 / 1 *****
+
+***** SUMMARY of all rounds *****
+         Area: Min: 9.31392e+06 Average: 9.31392e+06 Max: 9.31392e+06
+         HPWL: Min: 236882 Average: 236882 Max: 236882
+Unweighted HPWL: Min: 236882 Average: 236882 Max: 236882
+   WhiteSpace: Min: 5.47343% Average: 5.47343% Max: 5.47343%
+Average Time: 0.006975

@@ -1,0 +1,100 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+
+PROG=./CapoTest0.exe
+
+PROG1=./CapoTest1.exe
+
+if [ ! -x "$PROG" ]; then
+  echo "Missing regression executable: $PROG" >&2
+  echo "Build it with: make CapoTest0.exe" >&2
+  exit 1
+fi
+
+if [ ! -x "$PROG1" ]; then
+  echo "Missing regression executable: $PROG1" >&2
+  echo "Build it with: make CapoTest1.exe" >&2
+  exit 1
+fi
+
+/bin/rm -f seeds.out seeds.in new.out newout.notime expectedout.notime diffs.notime \
+  capo1.pl capo1.notime expected1.notime diffs1.notime \
+  capo1plot.gpl capo1plot.notime expected1plot.notime diffs1plot.notime \
+  capo1.order capo1order.log diffs1order.notime capo1-order.pl capo1-order-plot.gpl
+
+cp TESTS/seeds.in seeds.in
+
+echo "Running CapoPlacer on saurabh1 (20 cells)"
+echo "Running CapoPlacer on saurabh1 (20 cells)" >new.out
+"$PROG" -f TESTS/saurabh1.aux -noHMetis -verb 6_6_6 >>new.out 2>&1
+
+echo "Running CapoPlacer on primary1 w/ 02% whitespace"
+echo "Running CapoPlacer on primary1 w/ 02% whitespace" >>new.out
+
+"$PROG" -f TESTS/primary1.nf.WS02.aux -noHMetis -verb 6_6_6 -skipOverlapping >>new.out 2>&1
+
+echo "Running CapoPlacer on primary1 w/ 10% whitespace"
+echo "Running CapoPlacer on primary1 w/ 10% whitespace" >>new.out
+
+"$PROG" -f TESTS/primary1.nf.WS10.aux -noHMetis -verb 6_6_6 -skipOverlapping >>new.out 2>&1
+
+echo "Running CapoTest1 on saurabh1 with saved placement"
+echo "Running CapoTest1 on saurabh1 with saved placement" >>new.out
+
+"$PROG1" -f TESTS/saurabh1.aux -savePl capo1.pl -plotWNames capo1plot \
+  -noHMetis -verb 6_6_6 >>new.out 2>&1
+
+echo "Running CapoTest1 on saurabh1 with one-row ordering"
+"$PROG1" -f TESTS/saurabh1-hg.aux -saveOrder capo1.order -savePl capo1-order.pl \
+  -plotWNames capo1-order-plot -noHMetis -verb 6_6_6 >capo1order.log 2>&1
+
+egrep -vi "(#|Time|Created|took|sec|User|Platform|Memory|Compiled|faults|DestCentricGainContainerT using .* gain container)" new.out |
+  sed -E 's/(Warning in [^:)]+):[0-9]+/\1/g' >newout.notime
+egrep -vi "(#|Time|Created|took|sec|User|Platform|Memory|Compiled|faults|DestCentricGainContainerT using .* gain container)" expected.out |
+  sed -E 's/(Warning in [^:)]+):[0-9]+/\1/g' >expectedout.notime
+
+"$DIFF" newout.notime expectedout.notime >diffs.notime
+
+grep -v '^# Created' capo1.pl >capo1.notime
+grep -v '^# Created' expected1.pl >expected1.notime
+"$DIFF" capo1.notime expected1.notime >diffs1.notime
+grep -v '^# Created' capo1plot.gpl >capo1plot.notime
+grep -v '^# Created' expected1plot.gpl >expected1plot.notime
+"$DIFF" capo1plot.notime expected1plot.notime >diffs1plot.notime
+"$DIFF" capo1.order expected1.order >diffs1order.notime
+
+echo " "
+echo Differences from precomputed results
+"$WC" diffs.notime
+"$WC" diffs1.notime
+"$WC" diffs1plot.notime
+"$WC" diffs1order.notime
+
+#echo "** Depending on your platform, there may be large differences "
+#echo "** in this test -- that's ok "
+#echo "** Check for crashes; check the final WLs number (they must be close)"
+
+rm -f seeds.out seeds.in capo1.pl capo1.notime expected1.notime \
+  capo1plot.gpl capo1plot.notime expected1plot.notime \
+  capo1.order capo1order.log capo1-order.pl capo1-order-plot.gpl
+# newout.notime expectedout.notime

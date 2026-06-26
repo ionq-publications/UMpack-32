@@ -1,0 +1,76 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+set -eu
+
+PROG=./CtainersTest
+TMPDIR_ROOT=${TMPDIR:-/tmp}
+WORKDIR=$(mktemp -d "$TMPDIR_ROOT/ctainers-regression.XXXXXX")
+trap 'rm -rf "$WORKDIR"; rm -f seeds.in seeds.out newout.notime expectedout.notime' EXIT HUP INT TERM
+
+fail() {
+	echo "FAILED: $*" >&2
+	exit 1
+}
+
+run_ok() {
+	name=$1
+	shift
+	output="$WORKDIR/$name.out"
+	echo "Running $name ..."
+	if ! "$@" >"$output" 2>&1; then
+		cat "$output" >&2
+		fail "$name exited unsuccessfully"
+	fi
+	if grep -Eiq '(^|[^A-Za-z])(ERROR|FAIL)([^A-Za-z]|$)' "$output"; then
+		cat "$output" >&2
+		fail "$name emitted an error diagnostic"
+	fi
+	echo Ok
+}
+
+rm -f seeds.in seeds.out new.out diffs.notime
+run_ok semantic "$PROG"3.exe
+
+echo -n "Running test 0 ..."
+echo " ---- test 0 ----- " >>new.out
+printf '%s\n' 0 1667770400 >seeds.in
+"$PROG"0.exe >>new.out 2>&1
+rm -f seeds.in
+echo Ok
+
+echo -n "Running test 1 ..."
+echo " ---- test 1 ---- " >>new.out
+"$PROG"1.exe >>new.out 2>&1
+echo Ok
+
+echo -n "Running test 2 ..."
+echo " ---- test 2 ---- " >>new.out
+"$PROG"2.exe >>new.out 2>&1
+echo Ok
+
+grep -v Created new.out >newout.notime
+grep -v Created expected.out >expectedout.notime
+if ! diff -u expectedout.notime newout.notime >diffs.notime; then
+	cat diffs.notime >&2
+	fail "legacy output differs from expected.out"
+fi
+
+echo "All Ctainers regression tests passed"

@@ -1,0 +1,6 @@
+------------  Running test 0a...
+Prim MST Cost : 6
+PrimMST took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 
+------------  Running test 0b...
+Prim MST Cost : 46964
+PrimMST took  0 user, 0.0e+00 system, 0 real, 0 norm'd sec 

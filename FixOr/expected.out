@@ -1,0 +1,77 @@
+------------  Running test 1a...
+ RBPlacement Parameters
+  Verbosity:          Verbosity levels : 3
+ For actions : 2,   For sys resources : 2,   For major stats : 2
+
+  NumRowsToRemove:   0
+  SpaceCellsAlg:     Equal Spacing
+  Remove Congestion: 0
+HGraph Parameters: 
+   makeAllSrcSnk : 1
+   removeBigNets : 0
+   netThreshold  : 4294967295
+   nodeSortMethod: no sort
+   edgeSortMethod: no sort
+   shredTopology: Grid
+
+  adaptivePlotting: true
+    X pixels: 1280
+    Y pixels: 1024
+  compressedPlotting: true
+  Obstacle File: 
+
+Reading ../RowIroning/TESTS/C432a.aux
+Reading ../RowIroning/TESTS/C432a.aux
+ Reading ../RowIroning/TESTS/C432a.nodes ... 
+ Reading ../RowIroning/TESTS/C432a.nets ... 
+Finished reading ../RowIroning/TESTS/C432a.aux and referenced files
+ Reading ../RowIroning/TESTS/C432.scl ... 
+ Reading ../RowIroning/TESTS/C432a.pl ... 
+Finished reading ../RowIroning/TESTS/C432a.aux and referenced files
+
+Number of pass limit = 4294967295
+Cut off gain = 0
+Do Not Check Symmetry
+
+Initial WL : 491
+Num Flipped: 0
+Final WL   : 491
+------------  Running test 1b...
+ RBPlacement Parameters
+  Verbosity:          Verbosity levels : 3
+ For actions : 2,   For sys resources : 2,   For major stats : 2
+
+  NumRowsToRemove:   0
+  SpaceCellsAlg:     Equal Spacing
+  Remove Congestion: 0
+HGraph Parameters: 
+   makeAllSrcSnk : 1
+   removeBigNets : 0
+   netThreshold  : 4294967295
+   nodeSortMethod: no sort
+   edgeSortMethod: no sort
+   shredTopology: Grid
+
+  adaptivePlotting: true
+    X pixels: 1280
+    Y pixels: 1024
+  compressedPlotting: true
+  Obstacle File: 
+
+Reading ../RowIroning/TESTS/primary1.nf.WS10.aux
+Reading ../RowIroning/TESTS/primary1.nf.WS10.aux
+ Reading ../RowIroning/TESTS/primary1.nf.nodes ... 
+ Reading ../RowIroning/TESTS/primary1.nf.nets ... 
+ Reading ../RowIroning/TESTS/primary1.nf.wts ... 
+Finished reading ../RowIroning/TESTS/primary1.nf.WS10.aux and referenced files
+ Reading ../RowIroning/TESTS/primary1.nf.WS10.scl ... 
+ Reading ../RowIroning/TESTS/primary1.nf.WS10.pl ... 
+Finished reading ../RowIroning/TESTS/primary1.nf.WS10.aux and referenced files
+
+Number of pass limit = 4294967295
+Cut off gain = 0
+Do Not Check Symmetry
+
+Initial WL : 1.0516e+06
+Num Flipped: 0
+Final WL   : 1.0516e+06

@@ -1,0 +1,49 @@
+Clustering weightOption: 0
+Weighted edge refinement results (selected=W, others=1)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0      13       4       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      12      16       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      18      17       CUT       CUT       CUT     UNCUT       CUT     UNCUT
+       3      18      17       CUT       CUT       CUT     UNCUT     UNCUT     UNCUT
+       4      20      10       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+Weighted edge refinement results (selected=20*W, others=W)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0      13       4     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      12      16     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      18      17     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       3      18      17     UNCUT       CUT       CUT       CUT     UNCUT     UNCUT
+       4      20      10     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+Weighted edge refinement results (selected=W+20000, others=W)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0      13       4     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT       CUT
+       1      12      16     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      18      17     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT       CUT
+       3      18      17     UNCUT     UNCUT     UNCUT       CUT     UNCUT       CUT
+       4      20      10     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+Clustering weightOption: 6
+Weighted edge refinement results (selected=W, others=1)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0       6       5       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      18      17       CUT       CUT       CUT     UNCUT     UNCUT       CUT
+       2      19      11       CUT       CUT       CUT     UNCUT     UNCUT     UNCUT
+       3      19      11       CUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       4      20      10     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+Weighted edge refinement results (selected=20*W, others=W)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0       6       5     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      18      17     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       2      19      11     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       3      19      11     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       4      20      10     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+Weighted edge refinement results (selected=W+20000, others=W)
+    Soln    Edge  Degree       W=1       W=5      W=10     W=100    W=1000   W=10000
+       0       6       5     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+       1      18      17     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT       CUT
+       2      19      11     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT       CUT
+       3      19      11     UNCUT     UNCUT     UNCUT     UNCUT       CUT       CUT
+       4      20      10     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT     UNCUT
+When an edge becomes many times heavier than its adjacent edges,
+a smaller-cut solution exists. However, MLPart may not find it
+because clustering and uncoarsening restrict the refinement path.
+For a moderately heavier weight, what matters is how many adjacent edges
+must become cut to allow this edge to be uncut.

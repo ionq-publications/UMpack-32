@@ -1,0 +1,90 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+PROG=./MLPartTest
+
+/bin/rm -f seeds.* new8.out new8out.notime diffs8.notime >/dev/null 2>&1
+
+cp TESTS/seeds.in seeds.in
+
+echo "------------  Running test 0a..." >new.out
+printf '%s' 'Running test 0a...'
+"${PROG}0.exe" -f TESTS/dwarf1.aux -weightOption 0 >>new.out 2>&1
+echo ' -done'
+echo "------------  Running test 0b..." >>new.out
+printf '%s' "Running test 0b...(may take a while)"
+"${PROG}0.exe" -f TESTS/primary1+.aux -num 4 -lg 3 -verb 3_13_3 >>new.out 2>&1
+echo ' -done'
+
+echo "------------  Running test 0 refine..." >test.out
+printf '%s' 'Running test 0 refine...'
+"${PROG}0.exe" -f TESTS/dwarf1.aux -refine -num 1 >>test.out 2>&1
+echo ' -done'
+
+echo "------------  Running test 1 refine..." >>test.out
+printf '%s' 'Running test 1 refine...'
+"${PROG}1.exe" -f TESTS/dwarf1.aux -refine -runs 1 -num 1 >>test.out 2>&1
+echo ' -done'
+
+cp TESTS/seeds.in seeds.in
+
+echo "------------  Running test 8..." >new8.out
+printf '%s' 'Running test 8...'
+"${PROG}8.exe" -f TESTS/primary1+.aux >>new8.out 2>&1
+echo ' -done'
+
+egrep -v "(#|libraries|seeds.in|using|conversion|Time|Platform|Created|sec|User|Times|Memory)" new.out |
+	sed -E 's/(Warning in [^:)]+):[0-9]+/\1/g' |
+	sed 's/[[:space:]]*$//' | grep -v '^$' >newout.notime
+egrep -v "(#|libraries|seeds.in|using|conversion|Time|Platform|Created|sec|User|Times|Memory)" expected.out |
+	sed -E 's/(Warning in [^:)]+):[0-9]+/\1/g' |
+	sed 's/[[:space:]]*$//' | grep -v '^$' >expectedout.notime
+"$DIFF" newout.notime expectedout.notime >diffs.notime
+
+sed -n '/Running test 0 refine/,/Running test 1 refine/p' test.out |
+	egrep "^(Initial Net Cut:|Final Net Cut:|Net Cut:|Part Areas:)" >testrefine.notime
+sed -n '/Running test 1 refine/,$p' test.out |
+	egrep "^(Initial Net Cut:|-----   TestRun Number|Net Cut:|Part Areas:|[[:space:]]*Best Costs:)" \
+		>testrefine1.notime
+
+"$DIFF" testrefine.notime expectedrefine.out >diffsrefine.notime
+"$DIFF" testrefine1.notime expectedrefine1.out >diffsrefine1.notime
+
+awk '/^Weighted edge refinement results/ || \
+     /^Clustering weightOption:/ || \
+     ($1 == "Soln" && $2 == "Edge") || \
+     ($1 ~ /^[0-9]+$/ && $2 ~ /^[0-9-]+$/ && $3 ~ /^[0-9-]+$/) || \
+     /^When an edge/ || /^a smaller-cut/ || /^because clustering/ || \
+     /^For a moderately/ || /^must become/' new8.out | \
+	sed 's/[[:space:]]*$//' >new8out.notime
+
+"$DIFF" new8out.notime expected8.out >diffs8.notime
+
+echo " "
+echo Differences from precomputed results
+"$WC" diffs.notime
+"$WC" diffsrefine.notime
+"$WC" diffsrefine1.notime
+"$WC" diffs8.notime
+
+/bin/rm -f seeds.* test.out testrefine.notime testrefine1.notime \
+	new8.out new8out.notime >/dev/null 2>&1

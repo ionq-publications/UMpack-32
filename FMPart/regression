@@ -1,0 +1,95 @@
+#!/bin/sh
+
+#**************************************************************************
+#**
+#**    Copyright (c) 1995-1997 by ABKGroup, UCLA VLSI CAD Laboratory,
+#**    UCLA Computer Science Department, Los Angeles, CA 90095-1596 USA,
+#**    and by the Regents of the University of California.
+#**    All rights reserved.
+#**
+#**    No portion of this file may be used, copied, or transmitted for
+#**    any purpose, including any research or commercial purpose,
+#**    without the express written consent of Professor Andrew B. Kahng,
+#**    UCLA Computer Science Department, 3713 Boelter Hall, Los Angeles,
+#**    CA 90095-1596 USA.   Any copy made of this file must include this
+#**    notice.    ABKGroup and the Regents of the University of California
+#**    retain title to all copies of this file and/or its compiled
+#**    derivatives.
+#**
+#**************************************************************************/
+
+DIFF=/usr/bin/diff
+WC=/usr/bin/wc
+PROG=./FMPartTest
+
+rm -f seeds.* new4.out new4out.notime expected4out.notime diffs4.notime \
+	new3.out new3out.notime diffs3.notime \
+	new8.out new8out.notime diffs8.notime \
+	diffsrefine.notime test.out test.notime >/dev/null 2>&1
+
+printf '%s\n' 0 1 >seeds.in
+
+echo "------------  Running test 0a..." >new.out
+echo -n Running test 0a...
+"$PROG"0.exe -f TESTS/primary1+.aux -useClip -num 3 -verb 1_1_1 >>new.out 2>&1
+echo Ok
+
+egrep -v "(#|seed|conversion|arning|Built|built|running|and libraries|compiler|Created|sec|User|Platform|Memory)" new.out >newout.notime
+egrep -v "(#|seed|conversion|arning|Built|built|running|and libraries|compiler|Created|sec|User|Platform|Memory)" expected.out >expectedout.notime
+
+"$DIFF" newout.notime expectedout.notime >diffs.notime
+
+echo "------------  Running test 3..." >new3.out
+echo -n Running test 3...
+"$PROG"3.exe -f TESTS/primary1+.aux -num 3 -runs 1 -clip -verb 1_1_1 >>new3.out 2>&1
+echo Ok
+
+egrep "^(-----   TestRun Number| Best of 3 Net Cut:| Best Costs:)" new3.out | \
+	sed 's/[[:space:]]*$//' >new3out.notime
+
+"$DIFF" new3out.notime expected3.out >diffs3.notime
+
+echo "------------  Running test 4a..." >new4.out
+echo -n Running test 4a...
+"$PROG"4.exe -f TESTS/primary1+.aux -num 3 -runs 1 -useClip -verb 1_1_1 >>new4.out 2>&1
+echo Ok
+
+egrep "^(-----   TestRun Number|Unweighted Net Cut:|Weighted   Net Cut:| Best Costs:)" new4.out | sed 's/[[:space:]]*$//' >new4out.notime
+egrep "^(-----   TestRun Number|Unweighted Net Cut:|Weighted   Net Cut:| Best Costs:)" expected4.out | sed 's/[[:space:]]*$//' >expected4out.notime
+
+"$DIFF" new4out.notime expected4out.notime >diffs4.notime
+
+echo "------------  Running test 8..." >new8.out
+echo -n Running test 8...
+"$PROG"8.exe -f TESTS/primary1+.aux -useClip -verb 1_1_1 >>new8.out 2>&1
+echo Ok
+
+awk '/^Weighted edge refinement results/ || \
+     ($1 == "Soln" && $2 == "Edge") || \
+     ($1 ~ /^[0-9]+$/ && $2 ~ /^[0-9-]+$/ && $3 ~ /^[0-9-]+$/) || \
+     /^When an edge/ || /^a smaller-cut/ || /^For a moderately/ || \
+     /^must become/' new8.out | sed 's/[[:space:]]*$//' >new8out.notime
+
+"$DIFF" new8out.notime expected8.out >diffs8.notime
+
+echo "------------  Running test 0 refine..." >test.out
+echo -n Running test 0 refine...
+"$PROG"0.exe -f TESTS/dwarf1.aux -refine -verb 1_1_1 >>test.out 2>&1
+echo Ok
+
+egrep "^(Initial Net Cut:|Final Net Cut:)" test.out | sed 's/[[:space:]]*$//' >test.notime
+
+"$DIFF" test.notime expectedrefine.out >diffsrefine.notime
+
+echo " "
+echo Differences from precomputed results
+"$WC" diffs.notime
+"$WC" diffs3.notime
+"$WC" diffs4.notime
+"$WC" diffs8.notime
+"$WC" diffsrefine.notime
+
+rm -f seeds.* new4.out new4out.notime expected4out.notime diffs4.notime \
+	new3.out new3out.notime diffs3.notime \
+	new8.out new8out.notime diffs8.notime \
+	diffsrefine.notime test.out test.notime >/dev/null 2>&1
